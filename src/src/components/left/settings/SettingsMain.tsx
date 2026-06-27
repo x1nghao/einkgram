@@ -19,6 +19,10 @@ import useHistoryBack from '../../../hooks/useHistoryBack';
 import useLang from '../../../hooks/useLang';
 import useLastCallback from '../../../hooks/useLastCallback';
 
+// Einkgram — E-Ink mode toggle (v0.4.1)
+// One import + one ListItem = minimal red-zone touch.
+import EinkToggle from '../../../eink/EinkToggle';
+
 import GramIcon from '../../common/icons/GramIcon';
 import StarIcon from '../../common/icons/StarIcon';
 import ChatExtra from '../../common/profile/ChatExtra';
@@ -116,6 +120,9 @@ const SettingsMain: FC<OwnProps & StateProps> = ({
             onClick={() => openSettingsScreen({ screen: SettingsScreens.Performance })}
           >
             {lang('MenuAnimations')}
+          </ListItem>
+          <ListItem narrow nonInteractive>
+            <EinkToggle />
           </ListItem>
           <ListItem
             icon="unmute"
