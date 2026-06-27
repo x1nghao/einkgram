@@ -77,7 +77,13 @@ export default defineConfig(({ mode }): UserConfig => {
   const isProductionApp = appEnv === 'production';
   const appleIcon = isProductionApp ? 'apple-touch-icon' : 'apple-touch-icon-dev';
   const mainIcon = isProductionApp ? 'icon-192x192' : 'icon-dev-192x192';
-  const manifest = isProductionApp ? 'site.webmanifest' : 'site_dev.webmanifest';
+  // Einkgram: use einkgram.webmanifest in production so the
+  // PWA install banner and app icon show "Einkgram" (not
+  // "Telegram Web"). The manifest file already exists at
+  // public/einkgram.webmanifest (added in v0.5.5) and was
+  // just never wired up here. Dev mode keeps site_dev.webmanifest
+  // for upstream-compat.
+  const manifest = isProductionApp ? 'einkgram.webmanifest' : 'site_dev.webmanifest';
   const csp = buildCsp(appEnv);
   const isDevelopmentMode = mode === 'development';
   const telegramApiId = env.TELEGRAM_API_ID || '';
