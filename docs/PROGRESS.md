@@ -435,3 +435,50 @@ The choice is persisted in `localStorage` and survives page reloads.
 - Einkgram About page
 - v1.0 release prep (CHANGELOG, full ROADMAP lock, public share)
 
+
+---
+
+## v0.5.4 — Review fixes (refactor + dead code + race fix)
+
+Triggered by a 5-point review of v0.5.3. Addresses all but
+the cosmetic ones (component style + auto-detect) which are
+deferred to v0.5.5+.
+
+### Changes (all green zone except vitest config = yellow)
+
+- **init.ts refactor** (258 → 87 lines):
+  - `src/eink/init/mode.ts` — `applyInitialMode` + `EinkMode` type
+  - `src/eink/init/shortcut.ts` — `Ctrl+Shift+E` cycle handler
+  - `src/eink/init/pwa.ts` — `installPwaManifest`
+  - `src/eink/init/scrollButtons.ts` — page scroll mount
+  - `src/eink/init/imageProcessor.ts` — image observer + dev API
+  - `src/eink/init.ts` — 7-step orchestration only
+
+- **Race fix**: `installAutoProcessor` no longer writes to
+  `window.__eink`. It returns an API object; `imageProcessor.ts`
+  is the sole writer of `window.__eink.{setPanel,getPanel,reprocessImages}`.
+
+- **Dead code**: removed `SKIP_TAGS` from `autoProcess.ts`
+  (`img.tagName` is always `IMG`; the real guard is `WeakSet`).
+
+- **Memory optimization**: `processForPanel(img, 'unknown')`
+  now returns the original `<img>` instead of creating a new
+  canvas. Saves 8-32MB on 4-8MP photos.
+
+- **SCSS deduplication**: removed duplicate `:root` block
+  in `_mode.scss`. The full custom property set (including
+  `--eink-ramp-0..15`) lives in `_tokens.scss`.
+
+- **vitest config** (yellow zone, 14 lines): explicit
+  `environmentOptions.jsdom.storageQuota: 10_000_000` so
+  `localStorage.clear()` works in fresh checkouts.
+
+### Verification
+- `tsc --noEmit`: zero errors
+- `vitest`: 73/73 pass
+- `vite build`: 6.50s
+- Vite HMR: 200 on all routes
+
+### Commits
+- `eae56d9` v0.5.4 review fixes (refactor + dead code + race)
+- `71d9495` test: explicit jsdom storageQuota (10 MB)
