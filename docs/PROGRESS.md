@@ -778,3 +778,128 @@ v0.7 is the cleanest Einkgram yet. The project now:
 - Has full test coverage on the new behavior
 - Has a deployment pipeline (v0.6.2) and a clean
   audit pass (v0.7)
+
+---
+
+## v0.8 — 2026-06-28 — Code smell cleanup (review report, low-priority items)
+
+The v0.7 review report listed 7 low-priority code smells.
+This release fixes the 5 that are pure type/value
+consolidation. The remaining 2 (`window.__eink` API
+and the FC type import in `useEinkMode`) are documented
+as "intentional" instead of changed.
+
+### What was duplicated
+
+Before v0.8, these lived in 3 files:
+
+| What | useEinkMode.ts | init/mode.ts | init/shortcut.ts |
+|------|---------------:|-------------:|-----------------:|
+| `EinkMode` type | ✓ | ✓ | (imported) |
+| `STORAGE_KEY` | ✓ | ✓ | ✓ |
+| `CLASS_EINK/1BIT/PAPER` | ✓ | ✓ | ✓ |
+| `applyModeToDom()` | ✓ | ✓ | ✓ |
+| `readStoredMode()` | ✓ | ✓ | |
+| `cycleMode` logic | ✓ | | ✓ |
+
+Any change to the type, storage key, or DOM class names
+had to be made in 3 places. Any subtle bug in one
+implementation would diverge from the others.
+
+### v0.8 layout
+
+Two new files are the single source of truth:
+
+**`src/eink/constants.ts`** (60 lines, pure values)
+- `EinkMode` type
+- `EINK_MODES` — the 4 valid modes, immutable array
+- `EINK_MODE_CYCLE_ORDER` — the order used by the
+  shortcut and toggle (starts at 'standard' so a fresh
+  user gets the E-Ink experience, not 'off')
+- `EINK_MODE_STORAGE_KEY`, `CLASS_EINK`, `CLASS_1BIT`,
+  `CLASS_PAPER` — string constants
+- `EINK_MODE_LABELS` — `Record<EinkMode, string>` for
+  UI surfaces
+- `DEFAULT_EINK_MODE` — 'standard'
+
+**`src/eink/modeApply.ts`** (110 lines, pure functions)
+- `isEinkMode(v: unknown): v is EinkMode` — type guard
+- `readStoredMode()` / `writeStoredMode(mode)` — localStorage
+- `applyModeToDom(mode)` / `readModeFromDom()` — DOM
+- `cycleMode(current)` — pure cycle (wraps)
+
+The 3 consumers now re-export from these modules and
+use the consolidated functions:
+
+- `useEinkMode.ts`: 70 → 47 lines (-23)
+- `init/mode.ts`:   35 → 21 lines (-14)
+- `init/shortcut.ts`: 60 → 45 lines (-15)
+
+### Component signature migration (AGENTS.md §4)
+
+Per AGENTS.md §4 "Migrate any old `FC` syntax to the new
+form", two components are migrated:
+
+| Before | After |
+|--------|-------|
+| `const EinkToggle: FC = () => ...` | `const EinkToggle = () => ...` |
+| `const PanelSelector: FC<Props> = ({ initial }) => ...` | `const PanelSelector = ({ initial }: Props) => ...` |
+
+The `PageScrollButtons` component already uses the function
+form (added in v0.6.2).
+
+### Cross-ecosystem import removed
+
+`PanelSelector.tsx` no longer does
+`import type { ChangeEvent } from 'react'`. The structural
+type `{ target: { value: string } }` is identical at the
+call site (Teact's onChange signature matches React's
+for `<select>`), and the import no longer leaks the React
+ecosystem into the eink module graph.
+
+### Intentionally NOT changed
+
+- **`window.__eink` dev API**: kept as-is. The dev API
+  works, the type cast is a single `as unknown as ...`
+  per call site (3 sites total), and changing to ES
+  module exports would force every DevTools user to
+  refactor. Documented in code comments as intentional.
+- **`window.__eink` cycle alias**: kept on the API for
+  back-compat with v0.4-v0.7 DevTools users.
+
+### Verification
+
+- `tsc --noEmit`: 0 errors
+- `vitest`: **118/118 pass** (99 → 118, +19)
+  - 19 new tests for `modeApply`
+  - Coverage:
+    - `isEinkMode` (4 modes, 4 invalid)
+    - `applyModeToDom` × `readModeFromDom` round trip
+    - Idempotency
+    - Class cleanup on mode switch
+    - `readStoredMode` fallback behavior
+    - `cycleMode` ordering, wrapping, unknown input
+    - Full integration: read → apply → read
+- `vite build`: 7.97s
+- `dist/` after cleanup: 67 MB (unchanged)
+
+### Zone delta
+- 🔴 Red: **0**
+- 🟡 Yellow: **0**
+- 🟢 Green: 5 modified (-49 net lines) + 3 new files
+
+### Commits
+- `cea9178` v0.8: consolidate eink mode constants + helpers
+
+### Why this matters
+
+The 5 fixed code smells are about **maintainability**:
+- Adding a new EinkMode (e.g. 'sepia') was 3 file edits;
+  now it's 1 constant
+- Changing the storage key was 3 file edits; now it's 1
+- The `isEinkMode` type guard was missing in 2 of the
+  3 files; now there's one tested version
+- The "what if the user presses Ctrl+Shift+E for the
+  first time?" UX question (does it go to 'off' or
+  to 'standard'?) was a comment in shortcut.ts; now
+  it's a tested invariant in `cycleMode` tests
