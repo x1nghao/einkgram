@@ -346,3 +346,92 @@ The choice is persisted in `localStorage` and survives page reloads.
   panel from the Einkgram section).
 - Image processing toggle (on/off per message type).
 
+---
+
+## v0.5 — image processing + PWA
+
+### v0.5.1 — auto image processor (zero red zone)
+
+**Approach**: instead of modifying MessageMedia.tsx (red zone), we observe the DOM globally and re-attach every <img> as a dithered data: URL.
+
+- New file: `src/src/eink/autoProcess.ts` (~200 lines)
+  - `MutationObserver` watches `document.body`
+  - Parallel processing (4 at a time)
+  - `WeakSet` to track already-processed images
+  - Panel-aware: reads `getActivePanel()` from panels.ts
+- `src/src/eink/init.ts` wires it on `DOMContentLoaded`
+  - Exposes `window.__eink.setPanel(p)` / `.getPanel()`
+- `panels.ts` extended: `getActivePanel()`, `setActivePanel()`,
+  `ALL_PANEL_TYPES`, `isPanelType()`
+- `autoProcess.test.ts` — 6 new tests (panels storage)
+- Total: 73/73 tests pass
+
+**Zone delta**:
+- 🔴 Red: 0 lines
+- 🟡 Yellow: 0 lines
+- 🟢 Green: 341 lines (2 new + 2 modified)
+
+### v0.5.2 — PWA manifest (zero red zone, zero yellow zone)
+
+**Approach**: upstream already has a service worker. We just need a separate Einkgram-branded manifest.
+
+- New file: `public/einkgram.webmanifest` (PWA manifest, 36 lines)
+  - name: Einkgram
+  - theme_color: #000000 (ink)
+  - background_color: #FFFFFF (paper)
+  - icons: 192 + 512 + maskable-512 (placeholders)
+  - shortcuts: Saved Messages
+- Modified: `src/src/eink/init.ts`
+  - Added `installPwaManifest()` function
+  - Adds `<meta theme-color>`, `<link manifest>`, etc. via JS
+  - All tags tagged `data-einkgram="1"` for clean management
+- Verification: 73/73 tests pass, vite build 8.55s
+
+**Zone delta**:
+- 🔴 Red: 0 lines
+- 🟡 Yellow: 0 lines
+- 🟢 Green: 105 lines (1 new + 1 modified)
+
+### v0.5.3 — panel selector in Settings (5-line red zone)
+
+**Approach**: mirror the v0.4.1 pattern (1 import + 1 ListItem).
+
+- New file: `src/src/eink/PanelSelector.tsx` (~70 lines)
+  - Dropdown with 7 panel options (1bit, 4gray, 16gray, 256gray,
+    color-4096, color-30000, unknown)
+  - Each option has label + device-family description
+  - On change: writes to localStorage + calls `window.__eink.setPanel`
+    for immediate re-encoding
+- New file: `src/src/eink/PanelSelector.scss` (~60 lines)
+  - Pure B/W styling, no shadows, no transitions
+  - Custom dropdown arrow via CSS gradients
+  - 3px focus ring (E-Ink mode styling)
+- Modified: `src/src/components/left/settings/SettingsMain.tsx`
+  - 1 import + 4 JSX lines = 5 red-zone lines total
+  - Appears below the existing EinkToggle in Settings
+
+**Zone delta**:
+- 🔴 Red: 5 lines (import + 1 ListItem, well under 50-line cap)
+- 🟡 Yellow: 0 lines
+- 🟢 Green: 133 lines (2 new + 1 modified)
+
+### Verification (whole v0.5)
+- `tsc --noEmit`: zero errors
+- `vitest`: 73/73 pass (29 image processor + 6 autoProcess + 38 gramjs)
+- `vite build`: 6.64s, no errors
+- Vite HMR: 200 on all routes
+- `git log`: 12 commits, all green/yellow/red-zone-clean per zone tags
+
+### Commits
+- `ec784fd` v0.5.3 panel selector (1 red, 0 yellow, 3 green)
+- `a14fc07` v0.5.2 PWA manifest (0 red, 0 yellow, 2 green)
+- `a8a72a9` v0.5.1 auto image processor (0 red, 0 yellow, 4 green)
+
+### Next: v0.6
+- Real Einkgram icons (`public/einkgram-icon-{192,512}.png`
+  + maskable variant)
+- Auto panel detection via device pixel ratio + media queries
+- Per-message-type toggle (stickers vs photos vs videos)
+- Einkgram About page
+- v1.0 release prep (CHANGELOG, full ROADMAP lock, public share)
+
