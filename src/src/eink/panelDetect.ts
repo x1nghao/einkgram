@@ -300,12 +300,20 @@ function strategyTouchOnly(): PanelType | null {
 //
 // For 'slow' we return null (let monochrome refine bits-per-
 // pixel). For 'none' (very rare, older non-updating panels)
-// we return '4gray' as a safe default.
+// we return '4gray' as a safe default. For 'slow' (the common
+// E-Ink case — Carta, Elektra, Kaleido, etc.) we return
+// '16gray' as a safe default. v0.7 audit fix: previously we
+// only handled 'none' and silently dropped 'slow' even though
+// 'slow' is the strongest E-Ink signal.
 function strategyUpdateMedia(): PanelType | null {
   if (typeof window === 'undefined' || !window.matchMedia) return null;
   const noneMq = window.matchMedia('(update: none)');
   if (noneMq.matches && noneMq.media !== 'not all') {
     return '4gray';
+  }
+  const slowMq = window.matchMedia('(update: slow)');
+  if (slowMq.matches && slowMq.media !== 'not all') {
+    return '16gray';
   }
   return null;
 }

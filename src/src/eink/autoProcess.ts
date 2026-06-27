@@ -31,8 +31,14 @@ const MESSAGE_IMG_SELECTOR = [
   '.thumbnail',
 ].join(', ');
 
-const MAX_IMAGE_PIXELS = 4_000_000; // 4MP cap; warn at runtime
-const DATA_URL_QUALITY = 0.85;
+// v0.7 audit fix: 1MP (was 4MP) keeps data URLs under ~200 KB
+// for a typical photo, which is the size limit at which base64
+// encoding + browser-side decompression start to cause E-Ink
+// visible repaint stalls. A 16-gray 1MP image is more than
+// detailed enough for a 10" E-Ink panel.
+export const MAX_IMAGE_PIXELS = 1_000_000; // 1MP cap; warn at runtime
+export const MAX_DATA_URL_LENGTH = 500_000; // 500 KB; skip larger
+export const DATA_URL_QUALITY = 0.8; // v0.7: was 0.85, smaller base64
 
 let installed = false;
 let observer: MutationObserver | null = null;
@@ -74,9 +80,24 @@ async function processImage(img: HTMLImageElement, panel: PanelType): Promise<bo
     // processed is HTMLCanvasElement here. Convert to data URL
     // and replace src. This triggers a re-render but only once
     // per image (we set the marker after).
+    //
+    // v0.7 audit fix: skip if the data URL is too large. Large
+    // data URLs cause (a) high memory pressure (browser holds
+    // the base64 string in decoded form) and (b) visible repaint
+    // stall on E-Ink panels. For huge images the user is better
+    // off seeing the original (we don't process at all) than
+    // waiting for a 2 MB base64 string to decode.
     const dataUrl = processed.toDataURL('image/jpeg', DATA_URL_QUALITY);
     if (dataUrl.length < 100) {
       // Suspicious; skip.
+      return false;
+    }
+    if (dataUrl.length > MAX_DATA_URL_LENGTH) {
+      console.warn(
+        '[Einkgram] skipping processed image, data URL is',
+        Math.round(dataUrl.length / 1024),
+        'KB (limit', MAX_DATA_URL_LENGTH / 1024, 'KB)',
+      );
       return false;
     }
 

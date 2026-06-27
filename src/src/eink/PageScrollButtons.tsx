@@ -16,20 +16,29 @@ import type { FC } from '../lib/teact/teact';
 import { useEffect, useState } from '../lib/teact/teact';
 import { usePageScroll } from './usePageScroll';
 
+// v0.7: import the SCSS so the bundler emits it as a CSS chunk
+// in production. Previously the SCSS was loaded at runtime via
+// a `/src/eink/PageScrollButtons.scss?direct` URL, which 404s
+// after Vite hashes the file for the production build.
+import './PageScrollButtons.scss';
+
 const PageScrollButtons: FC = () => {
   const { pageScroll, getContainer } = usePageScroll(0.9);
   const [visible, setVisible] = useState(false);
 
   // The buttons are useful only when the messages container is on
-  // screen. We poll lightly to keep the state in sync with chat
-  // switches (when the container is unmounted/remounted).
+  // screen. v0.7: replaced 1s setInterval with a MutationObserver
+  // that fires only when the DOM changes (chat switch). The
+  // interval was wasting battery on E-Ink devices even when
+  // nothing changed.
   useEffect(() => {
     function update() {
       setVisible(getContainer() !== null);
     }
     update();
-    const t = window.setInterval(update, 1000);
-    return () => clearInterval(t);
+    const observer = new MutationObserver(update);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
   }, [getContainer]);
 
   if (!visible) return null;

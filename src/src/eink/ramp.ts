@@ -33,17 +33,47 @@ export function readRampFromCss(): number[] | null {
   return ramp;
 }
 
+// v0.7 audit fix: cache the CSS-derived ramp. Previously
+// every getRamp16() call invoked getComputedStyle() 16
+// times, which is expensive when called from per-pixel
+// dithering paths. The cache is keyed on the document
+// element so the user can swap panels (which change
+// --eink-ramp-*) by calling clearRampCache().
+let rampCache: number[] | null = null;
+let rampCacheRoot: Element | null = null;
+
+function getRampFromCache(): number[] | null {
+  const root = document.documentElement;
+  if (rampCache && rampCacheRoot === root) return rampCache;
+  const fresh = readRampFromCss();
+  if (fresh) {
+    rampCache = fresh;
+    rampCacheRoot = root;
+  }
+  return fresh;
+}
+
+/** Invalidate the ramp cache. Call this after changing eink mode
+ *  (since --eink-ramp-* values may differ between modes). */
+export function clearRampCache(): void {
+  rampCache = null;
+  rampCacheRoot = null;
+}
+
 /**
  * Get the active 16-level ramp, preferring the CSS-defined
  * perceptually-tuned values, falling back to a linear ramp.
+ *
+ * v0.7: results are memoized per document root. Call
+ * `clearRampCache()` after changing eink mode.
  *
  * @param {boolean} useCss If false, always return the linear fallback
  *   (useful for tests and for the initial render before stylesheet loads).
  */
 export function getRamp16(useCss = true): readonly number[] {
   if (useCss) {
-    const fromCss = readRampFromCss();
-    if (fromCss) return fromCss;
+    const fromCache = getRampFromCache();
+    if (fromCache) return fromCache;
   }
   return RAMP_16_LINEAR;
 }

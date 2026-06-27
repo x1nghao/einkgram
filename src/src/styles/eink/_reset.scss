@@ -1,46 +1,67 @@
-// Einkgram — E-Ink rendering reset
-// Phase 1.1: kill anti-aliasing + animation + colorful pattern background
-// Green zone: safe to modify freely (see docs/SYNC_STRATEGY.md)
-// Note: no @layer wrapper — see _tokens.scss for why.
+// Einkgram — E-Ink rendering reset (v0.7)
+//
+// IMPORTANT: Every rule in this file is now scoped to
+// `html.eink-mode`. Earlier versions of this file applied
+// the resets globally (to *, html, body without a class
+// selector), which broke Telegram Web A for non-E-Ink
+// users — desktop Safari/Firefox/Chrome users opening
+// Einkgram would get no animations, no font smoothing,
+// and no pattern background, even though they didn't ask
+// for an E-Ink experience.
+//
+// Audit fix (v0.7): all selectors prefixed with
+// `html.eink-mode`. The duplicate "kill animations"
+// block in _mode.scss is removed because the version
+// here now does the same job in the right scope.
+//
+// Green zone: safe to modify freely (see docs/SYNC_STRATEGY.md).
+// No @layer wrapper: see _tokens.scss for why.
 
-// 1. Disable font anti-aliasing — E-Ink panels render text without subpixel
-//    smoothing, and browser AA can leave ghost residue on partial refresh.
-html,
-body,
-* {
+// 1. Disable font anti-aliasing in E-Ink mode.
+//    E-Ink panels render text without subpixel smoothing,
+//    and browser AA leaves ghost residue on partial refresh.
+html.eink-mode,
+html.eink-mode body,
+html.eink-mode * {
   -webkit-font-smoothing: none;
   -moz-osx-font-smoothing: auto;
   text-rendering: geometricPrecision;
   font-smooth: never;
 }
 
-// 2. Disable all CSS animations and transitions globally.
-//    E-Ink partial refresh causes visible ghosts on moving elements.
-//    A future Phase will scope this to a "E-Ink mode" toggle only.
-*,
-*::before,
-*::after {
+// 2. Disable CSS animations and transitions in E-Ink mode.
+//    E-Ink partial refresh causes visible ghosts on moving
+//    elements. Scoped to eink-mode so regular Telegram Web
+//    users still get the smooth animations they expect.
+html.eink-mode,
+html.eink-mode *,
+html.eink-mode *::before,
+html.eink-mode *::after {
   animation-duration: 0s !important;
   animation-delay: 0s !important;
   transition-duration: 0s !important;
   transition-delay: 0s !important;
 }
 
-// 3. Suppress the colorful "pattern background" (the doodle artwork on
-//    light/dark mode backgrounds). The asset file is untouched (red zone);
-//    we simply make it invisible and replace with a flat E-Ink color.
-html {
+// 3. Suppress the colorful "pattern background" (the doodle
+//    artwork on light/dark mode backgrounds) and force a
+//    flat E-Ink paper color. Only in E-Ink mode.
+html.eink-mode {
   background-color: var(--eink-bg) !important;
 }
 
-// The pattern-background module uses a CSS-module class hash (e.g.
-// _patternBackground_module_css_hash). We target the module class generically.
-[class*="patternBackground"]::before {
+// The pattern-background module uses a CSS-module class hash
+// (e.g. _patternBackground_module_css_hash). We target the
+// module class generically, but only inside eink-mode.
+html.eink-mode [class*="patternBackground"]::before {
   opacity: var(--eink-pattern-opacity) !important;
 }
 
-// 4. Hide the "Switch to K Version" menu item (AngularJS K variant, not
-//    relevant for Einkgram). The href ends with "/k" by upstream convention.
-a.MenuItem[href$="/k"] {
+// 4. Hide the "Switch to K Version" menu item (AngularJS K
+//    variant, not relevant for Einkgram). The href ends
+//    with "/k" by upstream convention. Scoped to eink-mode
+//    so non-Einkgram users (e.g. upstream devs testing) can
+//    still see the switcher.
+html.eink-mode a.MenuItem[href$="/k"] {
   display: none !important;
 }

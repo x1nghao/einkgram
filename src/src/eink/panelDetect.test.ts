@@ -156,4 +156,47 @@ describe('panelDetect', () => {
     // Just verify the chain still completes.
     expect(typeof before).toBe('string');
   });
+
+  // ─── v0.7 audit tests ─────────────────────────────────
+  // (update: slow) was previously discarded by
+  // strategyUpdateMedia even though it's the strongest
+  // E-Ink signal. v0.7 returns '16gray' for (update: slow)
+  // and '4gray' for (update: none).
+  it('(update: slow) → 16gray (v0.7 fix)', () => {
+    const original = window.matchMedia;
+    // Stub matchMedia to return matches=true only for
+    // (update: slow). All other queries return false.
+    window.matchMedia = ((query: string) => ({
+      matches: query === '(update: slow)',
+      media: query,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    })) as typeof window.matchMedia;
+    clearDetectionCache();
+    const v = detectPanel();
+    expect(v).toBe('16gray');
+    window.matchMedia = original;
+  });
+
+  it('(update: none) → 4gray (v0.7 fix, unchanged)', () => {
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query === '(update: none)',
+      media: query,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    })) as typeof window.matchMedia;
+    clearDetectionCache();
+    const v = detectPanel();
+    expect(v).toBe('4gray');
+    window.matchMedia = original;
+  });
 });

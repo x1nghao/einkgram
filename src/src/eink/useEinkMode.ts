@@ -46,6 +46,13 @@ export function useEinkMode() {
     } catch {
       // ignore quota / privacy mode errors
     }
+    // v0.7: invalidate the ramp cache when eink mode changes
+    // (the --eink-ramp-* CSS variables may differ between
+    // 1bit / paper / standard variants).
+    void import('./ramp').then((m) => m.clearRampCache()).catch(() => {
+      // ramp.ts may not be available in some test contexts;
+      // the cache is best-effort.
+    });
   }, [mode]);
 
   const setMode = useCallback((next: EinkMode) => {

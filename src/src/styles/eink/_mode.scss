@@ -70,14 +70,13 @@ html.eink-mode {
 
   // Disable any caret blink animation (the E-Ink panel can't
   // actually show a blinking caret, so the upstream default is
-  // a wasted repaint every 500ms).
+  // a wasted repaint every 500ms). Animation/transition kill
+  // is handled by _reset.scss (scoped to html.eink-mode, same
+  // selector) so we only need to override caret-color here.
   *,
   *::before,
   *::after {
     caret-color: var(--eink-fg) !important;
-    animation-duration: 0s !important;
-    animation-delay: 0s !important;
-    transition-duration: 0s !important;
   }
 }
 
