@@ -1,0 +1,38 @@
+// Einkgram — Toggle-able E-Ink mode (v0.2)
+//
+// Adds a `html.eink-mode` class (set by `src/eink/init.ts`)
+// that re-applies a stronger E-Ink filter on top of v0.1's
+// always-on reset. Adds `html.eink-mode.eink-1bit` variant
+// for pure black & white panels (Kindle, Boox Go 7, etc).
+//
+// Green zone — safe to modify freely (see docs/SYNC_STRATEGY.md).
+// No @layer wrapper: unlayered CSS wins over common.scss by default,
+// and we rely on this file's @use order (after common + v0.1 tokens/reset)
+// to keep priority in the cascade.
+
+html.eink-mode {
+  // 16-level grayscale filter for the whole UI.
+  // contrast(1.05) restores some mid-tone separation that
+  // pure grayscale(1) would otherwise flatten.
+  filter: grayscale(1) contrast(1.05);
+
+  // Force paper-white / ink-black baseline so theme-dark
+  // users also get a paper look. (Dark mode is rarely useful on E-Ink.)
+  background-color: #FFFFFF !important;
+  color: #000000 !important;
+}
+
+// 1-bit variant — aggressive threshold to pure black & white.
+// `contrast(99)` collapses mid-grays to either black or white
+// depending on the cutoff. Best for genuine 1-bit E-Ink panels.
+html.eink-mode.eink-1bit {
+  filter: grayscale(1) contrast(99);
+}
+
+// Optional: opt-in helper for users who want a softer, more
+// "warm paper" look (slight sepia tint to reduce blue light
+// emission — irrelevant for E-Ink, but feels paper-like on
+// RGB tablets that emulate E-Ink).
+html.eink-mode.eink-paper {
+  filter: grayscale(1) sepia(0.15) contrast(1.05);
+}

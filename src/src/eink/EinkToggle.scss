@@ -1,0 +1,47 @@
+// Einkgram — EinkToggle styles (v0.2)
+//
+// Uses E-Ink tokens from _tokens.scss. Inherits the E-Ink
+// look (no shadows, no rounded corners) from the global
+// html.eink-mode override; in 'off' mode it still uses the
+// tokens but stays visible (e.g. for testing in regular browsers).
+//
+// Green zone: new file, no upstream code touched.
+
+.eink-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+
+  font-size: 0.875rem;
+  line-height: 1.25;
+
+  // Stay readable even when html.eink-mode filter is on
+  background: #FFFFFF;
+  color: #000000;
+  border: 1px solid #000000;
+  border-radius: 0; // E-Ink = no rounded corners
+}
+
+.eink-toggle__label {
+  font-weight: 500;
+}
+
+.eink-toggle__btn {
+  cursor: pointer;
+
+  padding: 0.125rem 0.5rem;
+
+  font: inherit;
+
+  background: #000000;
+  color: #FFFFFF;
+  border: 1px solid #000000;
+  border-radius: 0;
+}
+
+.eink-toggle__btn:hover,
+.eink-toggle__btn:focus {
+  outline: 2px solid #000000;
+  outline-offset: 1px;
+}
