@@ -482,3 +482,57 @@ deferred to v0.5.5+.
 ### Commits
 - `eae56d9` v0.5.4 review fixes (refactor + dead code + race)
 - `71d9495` test: explicit jsdom storageQuota (10 MB)
+
+---
+
+## v0.5.5 — Auto panel detection
+
+Closes review item #4 (panel auto-detect). All green zone.
+
+### Strategy order (first non-null wins, cached 60s)
+
+1. CSS `monochrome` media query (Chrome 108+) — bits per pixel
+2. CSS custom property hints (`--eink-panel`, `--onyx-panel`)
+3. `window.screen.colorDepth` + `devicePixelRatio`
+4. User-Agent fingerprints:
+   - Kindle / Silk (Colorsoft → color-4096, Oasis Sig → 256gray,
+     else → 16gray)
+   - BOOX / Onyx (Ultra C / Poke 5+ / Note Air C → color-4096,
+     else → 16gray)
+   - Bigme (InkNote Color / B251C → color-4096, else → 16gray)
+   - Supernote / Ratta (always 16gray)
+   - reMarkable / Remarkab (always 16gray)
+   - Kobo (Libra Colour / Elipsa 2E → color-4096, else → 16gray)
+   - Generic Linux non-Android → 16gray (custom e-reader FW)
+5. Touch-only heuristic (coarse pointer + no hover + small screen)
+
+### API changes (panels.ts)
+
+- New: `setActivePanelAuto()` — stores `'auto'` sentinel in
+  localStorage. Subsequent `getActivePanel()` calls re-run
+  detection.
+- Renamed: `'unknown'` PanelType stays for the data layer but
+  the PanelSelector no longer exposes it as a user option.
+  The new "Auto-detect" option uses the `'auto'` sentinel.
+
+### UX improvement
+
+Before: user opens Einkgram on Kindle Paperwhite, sees
+washed-out 16-gray dithering, has to dig into Settings →
+Display panel → 1-bit to get sharp B&W text.
+
+After: default is "Auto-detect". UA fingerprint matches
+Kindle → image processor switches to 1-bit threshold
+dithering within 60ms. No user action required.
+
+The same path also covers reMarkable / Supernote / Kobo /
+Bigme, which had no clear default in v0.5.4.
+
+### Verification
+- `tsc --noEmit`: zero errors
+- `vitest`: 84/84 pass (73 → 84, +11)
+- `vite build`: 6.37s
+- Vite HMR: 200 on all routes
+
+### Commits
+- `863130a` v0.5.5 auto panel detection
