@@ -1,0 +1,61 @@
+// Einkgram — Loading screen styles (v0.9)
+//
+// Static design for E-Ink panels:
+//   - Flat black-on-white text (no shadows, no gradients, no
+//     anti-aliased borders — every pixel is either pure black
+//     or pure white to avoid dither ghosting on partial refresh)
+//   - 2px solid bar; 25% filled by default (1 initial repaint
+//     and then nothing — no animation, no transition, no steps)
+//   - When `progress` is provided the parent updates the
+//     `width` style on `eink-loading__fill`. Each update is
+//     1 repaint, but the parent typically only does this 1-2
+//     times during boot (init → loaded).
+//
+// Green zone: no upstream code touched.
+
+.eink-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  height: 100%;
+
+  padding: 2rem;
+  background-color: #ffffff;
+  color: #000000;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.eink-loading__label {
+  margin-bottom: 1.5rem;
+  letter-spacing: 0.025em;
+}
+
+.eink-loading__bar {
+  position: relative;
+  width: 16rem;
+  max-width: 80%;
+  height: 0.5rem;
+
+  background-color: #ffffff;
+  border: 2px solid #000000;
+  box-sizing: content-box;
+
+  overflow: hidden;
+}
+
+.eink-loading__fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+
+  width: 0;
+  background-color: #000000;
+}

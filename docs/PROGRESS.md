@@ -903,3 +903,130 @@ The 5 fixed code smells are about **maintainability**:
   first time?" UX question (does it go to 'off' or
   to 'standard'?) was a comment in shortcut.ts; now
   it's a tested invariant in `cycleMode` tests
+
+---
+
+## v0.9 — 2026-06-28 — White loading screen + force light mode
+
+**Status:** ✅ shipped. dev server running, build green, 124 tests pass.
+
+### What was done
+
+Three independent green-zone changes to address the
+"black screen with spinning circle" boot experience,
+which is the worst possible animation for E-Ink (1
+full-panel partial refresh per frame × 60fps).
+
+#### 1. Pre-React loading screen (green zone)
+
+A static loading screen is now baked into
+`src/index.html` and shown from the very first
+frame. It's a pure inline `<div>` with no JS
+dependency, so it paints before React, before
+Vite, before anything. When the eink init runs
+(installs in step 1b), it removes the screen via
+`requestAnimationFrame` + `window.load` belt-and-
+suspenders. Result: the user sees "Loading Einkgram…"
++ a 25% filled bar (1 repaint total) instead of a
+spinner that ghosts on every frame.
+
+**Files:**
+- `src/index.html` (+49 lines, 1 yellow-zone file
+  but the new block is a single `<div>`)
+- `src/eink/Loading.tsx` (new, ~1.7 KB)
+- `src/eink/Loading.scss` (new, ~1.4 KB)
+- `src/eink/init/hideLoader.ts` (new, ~1 KB)
+- `src/eink/init.ts` (+27 lines, all green zone)
+
+#### 2. White initial paint (yellow zone)
+
+`index.html` now sets `body { background: #fff }` so
+the first frame is paper-white, not browser-default
+black. E-Ink users no longer see a black flash before
+the app shell appears.
+
+#### 3. Force light mode (green zone)
+
+A new `src/eink/init/forceLightTheme.ts` module:
+- Removes `theme-dark` from `<html>` and adds
+  `theme-light` (light = what E-Ink does best)
+- Sets `color-scheme: light` so form controls,
+  scrollbars, and `<input type="date">` stay light
+- Installs a MutationObserver on `<html class>`
+  changes that re-applies the above if upstream
+  re-adds `theme-dark`
+
+This means Einkgram is **always light mode**, regardless
+of:
+- System theme (`prefers-color-scheme: dark` is ignored)
+- Upstream's persisted settings (the theme variable
+  is overridden)
+- User toggles in Settings → General (the observer
+  reverts it within 1 rAF)
+
+**Files:**
+- `src/eink/init/forceLightTheme.ts` (new, ~2.3 KB)
+- `src/eink/init/forceLightTheme.test.ts` (new, 6 tests)
+- `src/eink/init.ts` (+2 lines, all green zone)
+
+### Verification
+
+- `tsc --noEmit`: 0 errors
+- `vitest`: **124/124 pass** (118 → 124, +6)
+  - 6 new tests for `forceLightTheme`:
+    - install adds theme-light, removes theme-dark
+    - install sets color-scheme: light
+    - observer reverts theme-dark when upstream
+      re-adds it
+    - observer ignores unrelated attribute changes
+    - uninstall disconnects the observer
+    - install is idempotent
+- `vite build`: 7.95s
+- Verified in `dist/`:
+  - `index.html` has the loading screen (`grep -c
+    eink-loading-screen` = 1)
+  - `index-sMN9cnZ5.js` contains `hideEinkLoader`
+  - `index-sMN9cnZ5.js` and `extra-BZI4m10F.js`
+    contain `forceLightTheme` logic
+- `dist/` after cleanup: 67 MB (unchanged from v0.8)
+
+### Zone delta
+
+- 🔴 Red: **0**
+- 🟡 Yellow: 1 file modified (`index.html`, +49 lines,
+  single new `<div>` block — acceptable for a
+  critical user-facing fix)
+- 🟢 Green: 5 new files + 1 modified (init.ts, +27 lines)
+
+### Why this matters
+
+E-Ink users were getting a **double whammy** at boot:
+1. Black initial paint (browser default before CSS)
+2. Spinning circle (60fps partial refresh storm)
+
+Both are now fixed. The boot experience for an E-Ink
+user is: white page → "Loading Einkgram…" + 25% bar
+→ real UI. One repaint, then done.
+
+### Known limitations (deferred)
+
+- The 36 MB `img-apple-64/` emoji folder is still
+  copied to `dist/`. These emoji render as gray blobs
+  on E-Ink and aren't useful — they're a waste of
+  download size. Fix: add a `SKIP_EMOJI_COPY=1` env
+  var and gate the staticCopy targets in `vite.config.ts`.
+  Touches a yellow-zone file, so deferred to v0.10.
+- The pre-React loading screen doesn't show the panel
+  detection result yet (just a static "Loading…" text).
+  Could be enriched to show "Detected 16-gray panel…
+  Ready." but not critical for v0.9.
+
+### Next: v0.10
+
+- Skip emoji copy in production
+- Add deployment validation test that the dist is
+  < 80 MB after cleanup (currently 67 MB, comfortable)
+- PWA install prompt polish (Android E-Ink devices
+  show the install banner; iOS users need to "Add to
+  Home Screen" manually — add a banner inside the app
+  for that case)

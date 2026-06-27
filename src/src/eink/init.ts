@@ -22,6 +22,8 @@ import { registerShortcut, type ShortcutApi } from './init/shortcut';
 import { installPwaManifest } from './init/pwa';
 import { mountPageScrollButtons } from './init/scrollButtons';
 import { installImageProcessor } from './init/imageProcessor';
+import { hideEinkLoader } from './init/hideLoader';
+import { installForceLightTheme } from './init/forceLightTheme';
 
 import type { EinkMode } from './init/mode';
 import type { PanelType } from './panels';
@@ -45,6 +47,20 @@ function exposeDevApi(shortcutApi: ShortcutApi) {
 // 1. Apply the stored E-Ink mode to <html> ASAP.
 //    This must run before the first paint to avoid FOUC.
 applyInitialMode();
+
+// 1b. Hide the pre-React Einkgram loading screen (v0.9). The
+//     screen lives in index.html and is shown from the first
+//     frame; we remove it as soon as React has had a chance to
+//     mount. We use rAF + window.load as a belt-and-suspenders
+//     approach so the screen hides whether the React mount is
+//     fast (cached bundle) or slow (cold load).
+scheduleHideLoader();
+
+// 1c. Force light theme (v0.9). Einkgram is light-mode only.
+//     Installs a MutationObserver on <html> so upstream's
+//     theme switch (whether from settings, system theme change,
+//     or initial sync) gets reverted immediately.
+installForceLightTheme();
 
 // 2. Register the Ctrl+Shift+E shortcut. Returns a typed API.
 const shortcutApi = registerShortcut();
@@ -85,3 +101,14 @@ if (document.readyState === 'loading') {
 
 // 8. Type-only re-exports for callers that need them.
 export type { EinkMode, PanelType };
+
+// 9. Helper for step 1b above. Hides the static loading screen
+//    on the next animation frame and again on `window.load`.
+//    Both are safe: the second call is a no-op if the element
+//    is already gone.
+function scheduleHideLoader() {
+  requestAnimationFrame(hideEinkLoader);
+  if (document.readyState !== 'complete') {
+    window.addEventListener('load', hideEinkLoader, { once: true });
+  }
+}
