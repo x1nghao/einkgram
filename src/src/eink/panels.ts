@@ -14,7 +14,13 @@
 //   - Color panels (Kaleido) keep their color (no grayscale filter!)
 //   - The algorithm can be swapped (FS / Atkinson / Stucki) per panel
 //
+// v0.5.5 adds auto-detection: when the user hasn't picked a panel
+// from Settings, we run heuristics (UA, CSS monochrome media query,
+// screen color depth, touch-only) to guess. See panelDetect.ts.
+//
 // Green zone: pure utility module, no upstream touched.
+
+import { detectPanel } from './panelDetect';
 
 export type PanelType =
   | '1bit'
@@ -161,25 +167,38 @@ export const ALL_PANEL_TYPES: PanelType[] = [
 
 /**
  * Get the currently active panel.
- * Reads from localStorage first, falls back to CSS, then to 'unknown'.
+ * Reads from localStorage first, falls back to auto-detection,
+ * then to CSS, then to a safe default.
+ *
+ * Note: if localStorage holds the literal string 'auto', we
+ * treat that as "user has opted out of a manual pick" and
+ * run auto-detection on every call (no caching in localStorage).
  */
 export function getActivePanel(): PanelType {
   if (typeof localStorage !== 'undefined') {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored === 'auto') {
+        // User wants auto-detection. Run the heuristics.
+        return detectPanel();
+      }
       if (stored && isPanelType(stored)) return stored;
     } catch {
       // localStorage might be blocked; fall through.
     }
   }
+  // No manual pick: try auto-detect first (it's more accurate
+  // than the CSS var fallback in v0.5.4 and earlier).
+  const detected = detectPanel();
+  if (detected !== 'unknown') return detected;
   const fromCss = readPanelFromCss();
   if (fromCss !== 'unknown') return fromCss;
   return '16gray'; // safe default for Einkgram
 }
 
 /**
- * Set the active panel and persist to localStorage.
- * Also writes a CSS custom property so SCSS can react to it.
+ * Set the active panel to a user-picked value. Persists to
+ * localStorage. The value must be a valid PanelType.
  */
 export function setActivePanel(panel: PanelType): void {
   try {
@@ -189,5 +208,27 @@ export function setActivePanel(panel: PanelType): void {
   }
   if (typeof document !== 'undefined') {
     document.documentElement.style.setProperty('--eink-panel-type', panel);
+  }
+}
+
+/**
+ * Set the active panel to "auto-detect" mode. Persists 'auto'
+ * to localStorage so subsequent getActivePanel() calls will
+ * run detection again. Also clears the detection cache so
+ * the next call returns a fresh answer.
+ */
+export function setActivePanelAuto(): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, 'auto');
+  } catch {
+    // ignore
+  }
+  // Clear the cached detection so the next getActivePanel() call
+  // re-runs the strategies.
+  // Lazy import to avoid a circular dep.
+  import('./panelDetect').then((m) => m.clearDetectionCache()).catch(() => {});
+  if (typeof document !== 'undefined') {
+    // Mark in CSS that we're in auto mode.
+    document.documentElement.style.setProperty('--eink-panel-type', 'auto');
   }
 }

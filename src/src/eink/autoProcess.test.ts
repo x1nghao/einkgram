@@ -8,17 +8,21 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import {
   getActivePanel,
   setActivePanel,
+  setActivePanelAuto,
   isPanelType,
   ALL_PANEL_TYPES,
 } from './panels';
+import { clearDetectionCache } from './panelDetect';
 
 describe('panels storage', () => {
   beforeEach(() => {
     localStorage.clear();
+    clearDetectionCache();
   });
 
   afterEach(() => {
     localStorage.clear();
+    clearDetectionCache();
   });
 
   it('isPanelType guards valid values', () => {
@@ -61,5 +65,28 @@ describe('panels storage', () => {
     const p = getActivePanel();
     // Falls back to CSS or default; should still be a valid type.
     expect(typeof p).toBe('string');
+  });
+
+  it('setActivePanelAuto persists "auto" sentinel', () => {
+    setActivePanelAuto();
+    expect(localStorage.getItem('eink-panel')).toBe('auto');
+  });
+
+  it('getActivePanel runs detection when localStorage is "auto"', () => {
+    localStorage.setItem('eink-panel', 'auto');
+    clearDetectionCache();
+    const p = getActivePanel();
+    // Detection may return any valid PanelType; we just assert
+    // it returns a string (jsdom gives us "unknown" or
+    // "16gray" depending on env).
+    expect(typeof p).toBe('string');
+  });
+
+  it('setActivePanel overrides prior "auto" setting', () => {
+    setActivePanelAuto();
+    expect(localStorage.getItem('eink-panel')).toBe('auto');
+    setActivePanel('1bit');
+    expect(localStorage.getItem('eink-panel')).toBe('1bit');
+    expect(getActivePanel()).toBe('1bit');
   });
 });

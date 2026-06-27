@@ -53,3 +53,19 @@
     background-color: var(--color-background, #fff);
   }
 }
+
+// v0.5.5: caption shown when in 'auto' mode, displaying
+// the panel the detector chose. Pure B/W, no transition.
+.eink-panel-selector__detected {
+  flex: 0 0 auto;
+  font-size: 0.8125rem;
+  color: var(--eink-fg-muted, #666);
+  font-style: italic;
+  white-space: nowrap;
+}
+
+.eink-panel-selector__detected strong {
+  font-style: normal;
+  font-weight: var(--font-weight-medium, 500);
+  color: var(--eink-fg, #000);
+}
