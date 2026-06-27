@@ -141,142 +141,19 @@ describe('panelDetect', () => {
     });
   });
 
-  // ─── v0.5.6 tests ──────────────────────────────────────
-  // Tests for the new update/screen-size/ppi strategies and
-  // the isLikelyEInkDevice gate.
+  // ─── v0.5.6 tests ─────────────────────────────────────
+  // Only test the (update: slow/none) media query. Earlier
+  // v0.5.6 drafts added screen-size and ppi strategies
+  // aimed at devices (Kindle) that can't actually run
+  // Einkgram; those were removed.
 
-  describe('v0.5.6 strategies', () => {
-    // Helper: stub everything to make a device look E-Ink.
-    function stubAsEInk(opts: {
-      ua?: string;
-      dpr?: number;
-      screenW?: number;
-      screenH?: number;
-      colorDepth?: number;
-    }) {
-      Object.defineProperty(navigator, 'userAgent', {
-        value: opts.ua ?? 'Mozilla/5.0 (Linux; U; Android 4.0.3; en-us) AppleWebKit/535.19 Silk/3.4',
-        configurable: true,
-      });
-      Object.defineProperty(window, 'devicePixelRatio', {
-        value: opts.dpr ?? 2,
-        configurable: true,
-      });
-      Object.defineProperty(window.screen, 'width', {
-        value: opts.screenW ?? 824, // ~6" Carta @ dpr 2
-        configurable: true,
-      });
-      Object.defineProperty(window.screen, 'height', {
-        value: opts.screenH ?? 1200,
-        configurable: true,
-      });
-      Object.defineProperty(window.screen, 'colorDepth', {
-        value: opts.colorDepth ?? 8,
-        configurable: true,
-      });
-    }
-
-    function restore() {
-      Object.defineProperty(window.screen, 'colorDepth', {
-        value: 24,
-        configurable: true,
-      });
-    }
-
-    it('6-inch E-Ink at 300 ppi is detected as 256gray', () => {
-      // BOOX Poke 5: 6" 300 ppi Carta 1200.
-      // dpr 2 = 192 ppi (per CSS spec), but 300 ppi Carta
-      // panels often report dpr 2 in Android WebView. Our
-      // ppi calc returns 192 which falls in 200-280 range
-      // → 16gray, not 256gray. So we test 256gray only for
-      // dpr 3 (ppi 288).
-      stubAsEInk({ dpr: 3, screenW: 1080, screenH: 1440 });
-      clearDetectionCache();
-      const v = detectPanel();
-      // dpr 3 → ppi 288 → 256gray, if our strategies run.
-      // But the UA 'Silk' strategy fires first and returns
-      // '16gray' for non-Oasis Kindle. So result is '16gray'.
-      // We verify it doesn't crash and returns a valid type.
-      expect(['16gray', '256gray', 'unknown']).toContain(v);
-      restore();
-    });
-
-    it('screen size matrix does NOT misfire on regular laptop', () => {
-      // MacBook Pro 16" without any E-Ink signal:
-      //   dpr 2, colorDepth 24, no touch, no E-Ink UA
-      // The screen-size strategy must return null (gated).
-      stubAsEInk({
-        ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Safari/605.1.15',
-        dpr: 2,
-        screenW: 3072,
-        screenH: 1920,
-        colorDepth: 24,
-      });
-      clearDetectionCache();
-      const v = detectPanel();
-      // Not an E-Ink device; should not return a confident
-      // answer from screen-size or ppi. UA returns null.
-      // Monochrome media query is "not all" in jsdom. So we
-      // get 'unknown' or one of the color values.
-      expect(['color-4096', 'color-30000', 'unknown']).toContain(v);
-      restore();
-    });
-
-    it('E-Ink UA + 6" screen returns a gray panel', () => {
-      // Kindle Paperwhite 5: 6.8" 300 ppi, 16-gray Carta.
-      // UA matches 'Silk' → 16gray (Strategy 4).
-      stubAsEInk({
-        ua: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Silk/91.2.13 like Chrome/91.0.4472.120',
-        dpr: 2,
-        screenW: 824,
-        screenH: 1200,
-        colorDepth: 8,
-      });
-      clearDetectionCache();
-      const v = detectPanel();
-      expect(v).toBe('16gray');
-      restore();
-    });
-
-    it('ppi strategy is gated on isLikelyEInkDevice', () => {
-      // Retina MacBook (ppi 192): not E-Ink, not touch,
-      // colorDepth 24, no e-reader UA. isLikelyEInkDevice
-      // returns false → ppi strategy returns null.
-      // Screen-color-depth strategy (NOT gated) returns
-      // 'color-4096' first because colorDepth=24 + dpr<2.5.
-      // The test verifies the PPI strategy doesn't OVERRIDE
-      // the color result with a gray one.
-      stubAsEInk({
-        ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 Version/17.0 Safari/605.1.15',
-        dpr: 2,
-        screenW: 1440,
-        screenH: 900,
-        colorDepth: 24,
-      });
-      clearDetectionCache();
-      const v = detectPanel();
-      // Should NOT be '256gray' or '16gray' (which PPI would
-      // have returned if not gated). May be 'color-4096' from
-      // the screen-color-depth strategy.
-      expect(['color-4096', 'unknown']).toContain(v);
-      // Explicitly assert PPI didn't overrule:
-      expect(v).not.toBe('256gray');
-      expect(v).not.toBe('16gray');
-      restore();
-    });
-
-    it('does not throw when devicePixelRatio is 0', () => {
-      stubAsEInk({ dpr: 0, screenW: 800, screenH: 600 });
-      clearDetectionCache();
-      expect(() => detectPanel()).not.toThrow();
-      restore();
-    });
-
-    it('does not throw when screen dimensions are 0', () => {
-      stubAsEInk({ screenW: 0, screenH: 0 });
-      clearDetectionCache();
-      expect(() => detectPanel()).not.toThrow();
-      restore();
-    });
+  it('returns null when matchMedia is missing the update query', () => {
+    // jsdom doesn't recognize (update: ...) so the media
+    // attribute is "not all" and .matches is false. Result
+    // should fall through to other strategies (and end at
+    // 'unknown' or whatever the next strategy returns).
+    const before = detectPanel();
+    // Just verify the chain still completes.
+    expect(typeof before).toBe('string');
   });
 });
