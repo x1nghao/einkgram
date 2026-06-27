@@ -1,26 +1,21 @@
-// Einkgram — UI toggle for E-Ink mode (v0.2)
+// Einkgram — UI toggle for E-Ink mode (v0.8)
 //
 // A small button-group that cycles through off / standard /
-// 1bit / paper modes. Not yet placed in a Settings panel —
-// for v0.2 it's reachable via Ctrl+Shift+E (see init.ts)
-// or `window.__eink.cycle()` in DevTools.
+// 1bit / paper modes. Reachable via Ctrl+Shift+E (see init/shortcut.ts)
+// or `window.__eink.cycle()` in DevTools, or by clicking this button
+// (placed in Settings → General in v0.4+).
 //
-// v0.3 will place this in Settings → General.
+// v0.8 cleanup: labels now come from the shared EINK_MODE_LABELS
+// map; component uses function form instead of `FC<>` to match
+// the project's preferred style (see AGENTS.md §4).
 //
 // Green zone: no upstream code touched.
 
-import type { FC } from '../lib/teact/teact';
 import { useEinkMode } from './useEinkMode';
+import { EINK_MODE_LABELS } from './modeApply';
 import './EinkToggle.scss';
 
-const LABELS: Record<string, string> = {
-  off: 'Off',
-  standard: '16-Gray',
-  '1bit': '1-Bit',
-  paper: 'Paper',
-};
-
-export const EinkToggle: FC = () => {
+export const EinkToggle = () => {
   const { mode, cycle } = useEinkMode();
 
   return (
@@ -30,9 +25,9 @@ export const EinkToggle: FC = () => {
         type="button"
         className="eink-toggle__btn"
         onClick={cycle}
-        aria-label={`Cycle E-Ink mode (current: ${LABELS[mode]})`}
+        aria-label={`Cycle E-Ink mode (current: ${EINK_MODE_LABELS[mode]})`}
       >
-        {LABELS[mode] ?? 'Standard'}
+        {EINK_MODE_LABELS[mode] ?? 'Standard'}
       </button>
     </div>
   );

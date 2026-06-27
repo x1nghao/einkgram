@@ -1,32 +1,19 @@
-// Einkgram — Initial mode application (extracted from init.ts in v0.5.4)
+// Einkgram — Initial mode application (v0.8: re-exports from modeApply)
 //
-// Reads the stored E-Ink mode from localStorage and applies the
-// corresponding class to <html> as early as possible. This runs
-// before main.tsx so the first paint already has the right
-// class on the root element.
+// v0.8 cleanup: this file used to define its own `EinkMode` type
+// and re-implement the DOM helpers. Now it just re-exports from
+// `./modeApply` and provides the boot-time `applyInitialMode()`
+// function used by init.ts.
+//
+// Green zone: no upstream code touched.
 
-export type EinkMode = 'off' | 'standard' | '1bit' | 'paper';
+import { applyModeToDom, readStoredMode, type EinkMode } from '../modeApply';
 
-const STORAGE_KEY = 'eink-mode';
-const CLASS_EINK = 'eink-mode';
-const CLASS_1BIT = 'eink-1bit';
-const CLASS_PAPER = 'eink-paper';
+export { type EinkMode } from '../modeApply';
 
-function isMode(v: string | null): v is EinkMode {
-  return v === 'off' || v === 'standard' || v === '1bit' || v === 'paper';
-}
-
+/** Read the stored E-Ink mode and apply it to <html> as early
+ *  as possible. Runs before main.tsx so the first paint already
+ *  has the right class on the root element. */
 export function applyInitialMode(): void {
-  if (typeof document === 'undefined') return;
-  const html = document.documentElement;
-  let mode: EinkMode = 'standard';
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (isMode(stored)) mode = stored;
-  } catch {
-    // ignore quota / privacy mode errors
-  }
-  html.classList.toggle(CLASS_EINK, mode !== 'off');
-  html.classList.toggle(CLASS_1BIT, mode === '1bit');
-  html.classList.toggle(CLASS_PAPER, mode === 'paper');
+  applyModeToDom(readStoredMode());
 }

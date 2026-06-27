@@ -1,4 +1,4 @@
-// Einkgram — UI selector for the E-Ink panel type (v0.5.3 + v0.5.5)
+// Einkgram — UI selector for the E-Ink panel type (v0.8)
 //
 // A small dropdown that lets users pick their device's panel
 // type. This drives the auto-processor's dithering algorithm
@@ -13,10 +13,14 @@
 // detected panel in a read-only caption so they can see what
 // was chosen.
 //
+// v0.8 cleanup:
+//   - component uses function form (no `FC<>`) to match
+//     AGENTS.md §4 preferred style
+//   - replaces the `from 'react'` ChangeEvent import with a
+//     structural type (avoids the cross-ecosystem import)
+//
 // Green zone: no upstream code touched.
 
-import type { ChangeEvent } from 'react';
-import type { FC } from '../lib/teact/teact';
 import { useCallback, useEffect, useState } from '../lib/teact/teact';
 import {
   setActivePanel as persistPanel,
@@ -41,11 +45,17 @@ const OPTIONS: { value: SelectValue; label: string; desc: string }[] = [
   { value: 'color-30000', label: 'Color 30K', desc: 'Latest Gallery 3' },
 ];
 
+// Structural type for <select> change events. Avoids the
+// `import type { ChangeEvent } from 'react'` cross-ecosystem
+// dependency; structurally identical to React.ChangeEvent
+// and Teact's onChange signature.
+type SelectChangeEvent = { target: { value: string } };
+
 type Props = {
   initial?: PanelType | 'auto';
 };
 
-export const PanelSelector: FC<Props> = ({ initial }) => {
+export const PanelSelector = ({ initial }: Props) => {
   // Lazy init from localStorage if not passed in.
   // The localStorage value 'auto' (string) becomes the
   // SelectValue 'auto'.
@@ -75,7 +85,7 @@ export const PanelSelector: FC<Props> = ({ initial }) => {
     setDetectedLabel(opt ? opt.label : 'Unknown (default 16-gray)');
   }, [value]);
 
-  const handleChange = useCallback((e: ChangeEvent<HTMLSelectElement>) => {
+  const handleChange = useCallback((e: SelectChangeEvent) => {
     const next = e.target.value as SelectValue;
     setValue(next);
     if (next === 'auto') {
