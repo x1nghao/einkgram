@@ -1,0 +1,55 @@
+// Einkgram — PanelSelector styles (v0.5.3)
+//
+// Mirrors the .eink-toggle styling so the two look like a
+// matched pair in Settings. Pure B/W, no shadows, no
+// transitions (E-Ink friendly).
+
+.eink-panel-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  font-family: var(--font-family, sans-serif);
+  color: var(--color-text, #000);
+}
+
+.eink-panel-selector__label {
+  font-weight: var(--font-weight-medium, 500);
+  font-size: 0.9375rem;
+  flex: 0 0 auto;
+}
+
+.eink-panel-selector__select {
+  flex: 1 1 auto;
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  color: inherit;
+  background-color: var(--color-background, #fff);
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 1.125rem) center, calc(100% - 0.625rem) center;
+  background-size: 0.5rem 0.5rem;
+  background-repeat: no-repeat;
+  border: 2px solid currentColor;
+  border-radius: 0;
+  cursor: pointer;
+
+  // Disable animation, keep things sharp
+  transition: none !important;
+  animation: none !important;
+
+  &:focus,
+  &:focus-visible {
+    outline: 3px solid currentColor;
+    outline-offset: 2px;
+  }
+
+  // The dropdown options themselves
+  option {
+    color: var(--color-text, #000);
+    background-color: var(--color-background, #fff);
+  }
+}

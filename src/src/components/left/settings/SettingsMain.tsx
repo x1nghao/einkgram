@@ -22,6 +22,9 @@ import useLastCallback from '../../../hooks/useLastCallback';
 // Einkgram — E-Ink mode toggle (v0.4.1)
 // One import + one ListItem = minimal red-zone touch.
 import EinkToggle from '../../../eink/EinkToggle';
+// Einkgram — Panel selector (v0.5.3)
+// One more import + one ListItem = panel type dropdown.
+import PanelSelector from '../../../eink/PanelSelector';
 
 import GramIcon from '../../common/icons/GramIcon';
 import StarIcon from '../../common/icons/StarIcon';
@@ -123,6 +126,9 @@ const SettingsMain: FC<OwnProps & StateProps> = ({
           </ListItem>
           <ListItem narrow nonInteractive>
             <EinkToggle />
+          </ListItem>
+          <ListItem narrow nonInteractive>
+            <PanelSelector />
           </ListItem>
           <ListItem
             icon="unmute"
