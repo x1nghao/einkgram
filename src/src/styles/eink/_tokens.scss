@@ -42,6 +42,32 @@ $eink-ramp: (
   --eink-divider: #{$eink-75};
   --eink-accent: #{$eink-0}; // links/buttons are pure black on E-Ink
   --eink-pattern-opacity: 0; // kill the colorful background by default
+
+  // Mid-tones used by the focus ring, selection, and various
+  // panel-aware UI elements. Distinct from the $eink-* Sass
+  // variables above; these are pure CSS exports.
+  --eink-mid: #808080;
+  --eink-faint: #c8c8c8;
+
+  // 16-step grayscale ramp, exposed for image-processing / dithering.
+  // Each step is a CSS custom property so TypeScript can read them
+  // at runtime via getComputedStyle (see src/eink/ramp.ts).
+  --eink-ramp-0: #{$eink-0};
+  --eink-ramp-1: #1c1c1c;
+  --eink-ramp-2: #383838;
+  --eink-ramp-3: #545454;
+  --eink-ramp-4: #{$eink-25};
+  --eink-ramp-5: #8c8c8c;
+  --eink-ramp-6: #a8a8a8;
+  --eink-ramp-7: #{$eink-50};
+  --eink-ramp-8: #b8b8b8;
+  --eink-ramp-9: #{$eink-75};
+  --eink-ramp-10: #d4d4d4;
+  --eink-ramp-11: #e0e0e0;
+  --eink-ramp-12: #ececec;
+  --eink-ramp-13: #f4f4f4;
+  --eink-ramp-14: #fafafa;
+  --eink-ramp-15: #{$eink-100};
 }
 
 // Dark mode (Night Mode) for E-Ink devices that support negative polarity

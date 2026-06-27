@@ -40,13 +40,22 @@ export { RAMP_16_LINEAR as RAMP_16, hexToGray, rgbToGray } from './grayscale';
 export function processForPanel(
   source: HTMLImageElement | HTMLCanvasElement | ImageBitmap,
   panel: PanelType,
-): HTMLCanvasElement {
+): HTMLCanvasElement | HTMLImageElement {
   const algo = recommendAlgorithm(panel);
   const levels = recommendLevels(panel);
   const keepColor = panelIsColor(panel);
 
   if (panel === 'unknown') {
-    // Pass-through: let upstream CSS handle it.
+    // Pass-through: let upstream CSS handle it. Return the
+    // original element reference to avoid copying the entire
+    // bitmap into a new canvas (an 8MB photo would otherwise
+    // eat 32MB of RAM just to sit in two places at once).
+    // Safe to widen return type: callers that need canvas
+    // semantics (toDataURL, getContext) check before calling.
+    if (source instanceof HTMLImageElement) return source;
+    // For canvas/ImageBitmap, we still need a canvas. But
+    // we can use drawImage(canvas) which is zero-copy on
+    // most engines, instead of going through ImageData.
     return toCanvas(source);
   }
 
@@ -65,7 +74,11 @@ export function processForPanel(
 export function ditherImage(
   source: HTMLImageElement | HTMLCanvasElement | ImageBitmap,
 ): HTMLCanvasElement {
-  return processForPanel(source, '16gray');
+  const result = processForPanel(source, '16gray');
+  // processForPanel may return the original <img> for 'unknown'
+  // panels, but we know '16gray' is never 'unknown' so the result
+  // is always a canvas here.
+  return result as HTMLCanvasElement;
 }
 
 // ─────────────────────────────────────────────────────────

@@ -31,7 +31,6 @@ const MESSAGE_IMG_SELECTOR = [
   '.thumbnail',
 ].join(', ');
 
-const SKIP_TAGS = new Set(['EINKGRAM_PROCESSED']);
 const MAX_IMAGE_PIXELS = 4_000_000; // 4MP cap; warn at runtime
 const DATA_URL_QUALITY = 0.85;
 
@@ -44,7 +43,6 @@ let processedSet = new WeakSet<HTMLImageElement>();
  * Returns true if processed, false if skipped.
  */
 async function processImage(img: HTMLImageElement, panel: PanelType): Promise<boolean> {
-  if (SKIP_TAGS.has(img.tagName)) return false;
   if (processedSet.has(img)) return false;
   if (!img.complete || !img.naturalWidth || !img.naturalHeight) return false;
 
@@ -64,8 +62,18 @@ async function processImage(img: HTMLImageElement, panel: PanelType): Promise<bo
   try {
     const processed = processForPanel(img, panel);
 
-    // Convert to data URL and replace src. This triggers a re-render
-    // but only once per image (we set the marker after).
+    // For 'unknown' panels, processForPanel returns the original
+    // <img> unchanged (pass-through). Mark as processed and skip
+    // the data-URL roundtrip.
+    if (processed instanceof HTMLImageElement) {
+      processed.dataset.einkProcessed = panel;
+      processedSet.add(processed);
+      return true;
+    }
+
+    // processed is HTMLCanvasElement here. Convert to data URL
+    // and replace src. This triggers a re-render but only once
+    // per image (we set the marker after).
     const dataUrl = processed.toDataURL('image/jpeg', DATA_URL_QUALITY);
     if (dataUrl.length < 100) {
       // Suspicious; skip.
@@ -127,11 +135,35 @@ async function reprocessAll(panel: PanelType): Promise<number> {
 }
 
 /**
+ * The public API returned by installAutoProcessor.
+ * The caller (init/imageProcessor.ts) is responsible for
+ * exposing this on window.__eink so we don't have a race
+ * between modules writing to window.__eink.
+ */
+export type AutoProcessorApi = {
+  /** Re-process every currently-rendered image. */
+  reprocessImages: (panel?: PanelType) => Promise<number>;
+  /** Read the current active panel used for new images. */
+  activeImagePanel: () => PanelType;
+  /** Set the active panel; future images use it. */
+  setPanel: (panel: PanelType) => void;
+};
+
+/**
  * Install the global image processor. Call once at app boot.
  * Idempotent: safe to call multiple times.
+ *
+ * Returns an API object. The caller decides whether/how to
+ * expose it on window.__eink (we don't do it here to avoid
+ * races with other init modules).
  */
-export function installAutoProcessor(): () => void {
-  if (installed) return () => {};
+export function installAutoProcessor(): AutoProcessorApi & { uninstall: () => void } {
+  if (installed) {
+    // Re-call after first install: return a noop API bound to
+    // the original currentPanel. The observer is still running.
+    const api = _api as AutoProcessorApi & { uninstall: () => void };
+    return api;
+  }
   installed = true;
 
   let currentPanel: PanelType = getActivePanel();
@@ -165,21 +197,27 @@ export function installAutoProcessor(): () => void {
   // 2. Process any images already in the DOM (first page load).
   void processSubtree(document, currentPanel);
 
-  // 3. Expose a re-process API for panel changes.
-  //    Wired in init.ts to panel selector changes.
-  (window as any).__eink = (window as any).__eink || {};
-  (window as any).__eink.reprocessImages = (panel?: PanelType) => {
-    if (panel) currentPanel = panel;
-    return reprocessAll(currentPanel);
+  // 3. Build the API. Caller (init/imageProcessor.ts) decides
+  //    how to expose it on window.__eink.
+  const api: AutoProcessorApi & { uninstall: () => void } = {
+    reprocessImages: (panel?: PanelType) => {
+      if (panel) currentPanel = panel;
+      return reprocessAll(currentPanel);
+    },
+    activeImagePanel: () => currentPanel,
+    setPanel: (panel: PanelType) => {
+      currentPanel = panel;
+    },
+    uninstall: () => {
+      observer?.disconnect();
+      observer = null;
+      installed = false;
+    },
   };
-  (window as any).__eink.activeImagePanel = () => currentPanel;
-
-  // 4. Return uninstall function (not used in production; useful for tests).
-  return () => {
-    observer?.disconnect();
-    observer = null;
-    installed = false;
-  };
+  _api = api;
+  return api;
 }
+
+let _api: (AutoProcessorApi & { uninstall: () => void }) | null = null;
 
 export default installAutoProcessor;

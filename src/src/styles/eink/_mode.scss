@@ -19,28 +19,11 @@
 // any component (Red, Yellow, or Green zone) can opt-in via
 // `var(--eink-fg)` etc. without importing the SCSS file.
 // This is a one-way export — no upstream rule references these.
-:root {
-  --eink-bg: #FFFFFF;
-  --eink-fg: #000000;
-  --eink-mid: #808080;
-  --eink-faint: #C0C0C0;
-  --eink-ramp-0: #000000;
-  --eink-ramp-1: #111111;
-  --eink-ramp-2: #222222;
-  --eink-ramp-3: #333333;
-  --eink-ramp-4: #444444;
-  --eink-ramp-5: #555555;
-  --eink-ramp-6: #666666;
-  --eink-ramp-7: #777777;
-  --eink-ramp-8: #888888;
-  --eink-ramp-9: #999999;
-  --eink-ramp-10: #AAAAAA;
-  --eink-ramp-11: #BBBBBB;
-  --eink-ramp-12: #CCCCCC;
-  --eink-ramp-13: #DDDDDD;
-  --eink-ramp-14: #EEEEEE;
-  --eink-ramp-15: #FFFFFF;
-}
+// (Variables are defined in _tokens.scss to keep a single
+//  source of truth. This file only adds the eink-mode class
+//  rules below.)
+// Removed in v0.5.4: the duplicate :root block. The full
+// CSS custom property set lives in _tokens.scss.
 
 html.eink-mode {
   // 16-level grayscale filter for the whole UI.
