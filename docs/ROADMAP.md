@@ -7,6 +7,26 @@
 
 ---
 
+## 📊 当前进度 (2026-06-27 22:00)
+
+| 版本 | 状态 | 红区 delta | 黄区 delta | 绿区 delta |
+|---|---|---|---|---|
+| v0.1 | ✅ 完成 | 0 | +2 lines | 2 new files |
+| v0.2 | ✅ 完成 | 0 | +2 lines | 6 new files |
+| v0.3 | ✅ 完成 | 0 | 0 | 5 new files (Banner later dropped) |
+| v0.4 | ✅ 完成 | +6 lines | +12 lines | +7 new files |
+| v0.5 | 📅 下一步 | ~10 lines (planned) | TBD | TBD |
+| v1.0 | 📅 公开发布 | TBD | TBD | TBD |
+
+**累计红区变更**: 6 lines (远低于 CONTRIBUTING.md 50-line 红区门槛)
+**黄区变更**: +16 lines (1 line for index.html in v0.2, 12 for EinkToggle.scss in v0.4.1, 2 for index.scss in v0.1-2, +1 in v0.4.2 for init.ts)
+
+**测试**: 67/67 vitest pass (29 image processor + 38 gramjs)
+**构建**: vite build 6.19s, 0 errors
+**TypeScript**: tsc --noEmit 0 errors
+
+---
+
 ## 🎯 项目定义
 
 ```

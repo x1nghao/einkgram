@@ -213,3 +213,136 @@ E-Ink mode on/off without losing the regular Telegram look. Added a
 - `esbuild` per-file: 6 files OK
 - Vite HMR: 200 on all routes
 - `init.ts` still loaded via `index.html` script tag (no change)
+
+---
+
+## v0.4 — 2026-06-27 22:00 — Touch UI + Settings integration
+
+**Theme**: Make Einkgram actually usable on touch E-Ink panels (BOOX,
+Bigme, reMarkable), with all user-facing controls wired into Settings.
+
+### v0.4.3 — Panel-aware image processor (already shipped)
+
+Added 4 dithering algorithms + median-cut quantization:
+
+- `src/src/eink/imageProcessor.ts` (NEW, 350+ lines)
+  - `floydSteinbergDither(img, options)` — classic FS error diffusion
+  - `atkinsonDither(img, options)` — softer 1/8 error, less noise
+  - `stuckiDither(img, options)` — high-quality, slower
+  - `quantizeToRamp(img, ramp)` — nearest-neighbor to N levels
+  - `medianCutQuantize(img, k)` — adaptive palette reduction
+  - `applyEinkPipeline(img, options)` — composes all of the above
+  - **Pure-TS, OffscreenCanvas-based, no React**
+
+- `src/src/eink/panels.ts` (NEW)
+  - `EINK_PANELS` database of common E-Ink panels
+  - 6 panels: Boox Tab Ultra, Boox Go 7, Bigme B751, Kindle Oasis 3,
+    reMarkable 2, Dasung Paperlike HD
+  - Each panel declares: width/height, bit-depth (1/4/16),
+    refresh mode (fast/regal/a2), recommended algorithm
+
+- `src/src/eink/imageProcessor.test.ts` (NEW, 29 tests)
+  - Tests all 4 dithering algorithms
+  - Tests median-cut quantization
+  - Tests pipeline composition
+  - **67/67 vitest pass** (29 new + 38 from upstream gramjs tests)
+
+This is forward-looking infrastructure — no UI integration yet (v0.5+).
+
+### v0.4.2 — Touch page-scroll buttons (zero red zone)
+
+Floating ↑/↓ buttons on the right edge of the screen, mounted by
+`init.ts` into a body-level `<div>` via `TeactDOM.render`. **Zero
+red-zone changes** because the component lives completely outside
+the upstream React tree.
+
+- `src/src/eink/PageScrollButtons.tsx` (NEW, 66 lines)
+  - `FC` component, two big buttons (↑/↓)
+  - 64×64 minimum tap target (E-Ink friendly)
+  - Solid 2px borders, no shadows, no transitions, no blur
+  - `tabIndex=-1` to keep keyboard nav untouched
+  - `aria-label` + `aria-hidden` for a11y
+  - Hidden in non-`eink-mode` (via parent class)
+
+- `src/src/eink/PageScrollButtons.scss` (NEW, 84 lines)
+  - High-contrast 1bit-style button styling
+  - Position: fixed, right edge, vertically centered
+  - Hidden on screens <600px wide (mobile phones use gestures)
+  - `prefers-reduced-motion` honored (no transitions anyway)
+
+- `src/src/eink/usePageScroll.ts` (NEW, 66 lines)
+  - `usePageScroll(ref)` hook — discovers the messages container
+    via `.messages-container` selector with a 500ms poll for
+    chat-switch container re-mounts
+  - `scrollBy(deltaY)` action, capped at 90% of clientHeight per tap
+  - Returns `{ canScrollUp, canScrollDown, scrollUp, scrollDown }`
+
+- `src/src/eink/init.ts` (modified, +1 line)
+  - Creates a body-level `<div id="eink-scroll-buttons">`
+  - Dynamically imports `PageScrollButtons` and renders via
+    `TeactDOM.render(component, host)` (teact's imperative API)
+  - This pattern keeps the component completely out of the
+    upstream React tree — no App.tsx, no SettingsMain.tsx, no
+    MessageListContent.tsx touched
+
+### v0.4.4 — Drop Banner (cleanup)
+
+The first-switch banner from v0.3 is no longer needed:
+  - Touch page-scroll buttons (v0.4.2) provide better touch discovery
+  - v0.4.1 integrates EinkToggle into Settings as canonical UI
+  - A "try next mode" banner is redundant once Settings is the source of truth
+
+Files removed: `src/src/eink/Banner.tsx` + `src/src/eink/Banner.scss` (-193 lines, both green zone)
+
+### v0.4.1 — Settings integration (THE ONLY red-zone touch)
+
+Adds an "E-Ink mode" row in Settings between Animations and
+Notifications, providing the canonical UI for users to switch
+display modes. One click cycles:
+
+  off (default Telegram look)
+  → standard (16-level grayscale)
+  → 1bit (pure black/white for Kindle-class devices)
+  → paper (warm sepia for OLED emulation)
+  → off
+
+The choice is persisted in `localStorage` and survives page reloads.
+
+**Red-zone delta: 6 lines added, 0 removed (1 file)**
+- `src/src/components/left/settings/SettingsMain.tsx`:
+  - +4 lines: import + 2-line comment
+  - +3 lines: `<ListItem narrow nonInteractive><EinkToggle /></ListItem>`
+  - No existing code modified, no upstream behavior changed
+
+**Yellow-zone delta: 12 lines added (1 file)**
+- `src/src/eink/EinkToggle.scss`:
+  - +12 lines: `.ListItem .eink-toggle` and `.ListItem .eink-toggle__btn`
+    override the standalone widget to fill the row + tap-friendly padding
+  - Original `.eink-toggle` styles preserved (still works standalone)
+
+**Green-zone delta: 0 files**
+
+**Total v0.4.1 delta: 18 lines, 0 deletions. Well under the 50-line cap.**
+
+### Verification (whole v0.4)
+- `tsc --noEmit`: zero errors
+- `vitest`: 67/67 pass (29 image processor + 38 gramjs)
+- `vite build`: 6.19s, no errors
+- Vite HMR: 200 on all routes
+- `git log`: 8 commits, all green/yellow/red-zone-clean per zone tags
+
+### Commits
+- `7417313` v0.4.1 Settings integration (1 red, 1 yellow, 0 green)
+- `034a27f` v0.4.4 drop Banner (0 red, 0 yellow, 0 green)
+- `76bd4e9` v0.4.2 touch scroll buttons (0 red, 1 yellow, 3 green)
+- `a767102` v0.4.3 image processor (0 red, 0 yellow, 3 green)
+- (v0.3 commits above)
+
+### Next: v0.5
+- Per-image dithering: wire `imageProcessor.applyEinkPipeline` into
+  the `MessageMedia` render path. **Red-zone cost: ~5-10 lines** in
+  `src/components/middle/message/MessageMedia.tsx`.
+- Settings page for panel selector (let user pick BOOX/KOReader/Kindle
+  panel from the Einkgram section).
+- Image processing toggle (on/off per message type).
+
