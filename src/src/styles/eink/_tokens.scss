@@ -1,0 +1,58 @@
+// Einkgram — E-Ink design tokens
+// Phase 1.1: minimal overrides for grayscale + high contrast
+// Green zone: safe to modify freely (see docs/SYNC_STRATEGY.md)
+// Note: no @layer wrapper — unlayered CSS has highest specificity by default,
+// and we rely on this file's @use order (after common) to win the cascade.
+
+// 4-level grayscale palette optimized for 16-grayscale E-Ink panels
+$eink-100: #ffffff; // paper white
+$eink-75: #c8c8c8;  // light gray (icons, hints)
+$eink-50: #808080;  // mid gray (secondary text)
+$eink-25: #404040;  // dark gray (primary text on light bg)
+$eink-0:  #000000;  // pure black (max contrast)
+
+// 16-grayscale ramp (for image rendering and dithering)
+$eink-ramp: (
+  0:  $eink-0,
+  1:  #1c1c1c,
+  2:  #383838,
+  3:  #545454,
+  4:  $eink-25,
+  5:  #8c8c8c,
+  6:  #a8a8a8,
+  7:  $eink-50,
+  8:  #b8b8b8,
+  9:  $eink-75,
+  10: #d4d4d4,
+  11: #e0e0e0,
+  12: #ececec,
+  13: #f4f4f4,
+  14: #fafafa,
+  15: $eink-100,
+);
+
+// Expose as CSS custom properties on :root (light mode default)
+:root {
+  --eink-bg: #{$eink-100};
+  --eink-fg: #{$eink-25};
+  --eink-fg-strong: #{$eink-0};
+  --eink-fg-muted: #{$eink-50};
+  --eink-fg-hint: #{$eink-75};
+  --eink-border: #{$eink-75};
+  --eink-divider: #{$eink-75};
+  --eink-accent: #{$eink-0}; // links/buttons are pure black on E-Ink
+  --eink-pattern-opacity: 0; // kill the colorful background by default
+}
+
+// Dark mode (Night Mode) for E-Ink devices that support negative polarity
+:root.theme-dark {
+  --eink-bg: #{$eink-0};
+  --eink-fg: #{$eink-75};
+  --eink-fg-strong: #{$eink-100};
+  --eink-fg-muted: #{$eink-50};
+  --eink-fg-hint: #{$eink-25};
+  --eink-border: #{$eink-25};
+  --eink-divider: #{$eink-25};
+  --eink-accent: #{$eink-100};
+  --eink-pattern-opacity: 0; // also kill pattern in dark mode
+}

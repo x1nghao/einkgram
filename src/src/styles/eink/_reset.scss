@@ -1,0 +1,46 @@
+// Einkgram — E-Ink rendering reset
+// Phase 1.1: kill anti-aliasing + animation + colorful pattern background
+// Green zone: safe to modify freely (see docs/SYNC_STRATEGY.md)
+// Note: no @layer wrapper — see _tokens.scss for why.
+
+// 1. Disable font anti-aliasing — E-Ink panels render text without subpixel
+//    smoothing, and browser AA can leave ghost residue on partial refresh.
+html,
+body,
+* {
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: auto;
+  text-rendering: geometricPrecision;
+  font-smooth: never;
+}
+
+// 2. Disable all CSS animations and transitions globally.
+//    E-Ink partial refresh causes visible ghosts on moving elements.
+//    A future Phase will scope this to a "E-Ink mode" toggle only.
+*,
+*::before,
+*::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+}
+
+// 3. Suppress the colorful "pattern background" (the doodle artwork on
+//    light/dark mode backgrounds). The asset file is untouched (red zone);
+//    we simply make it invisible and replace with a flat E-Ink color.
+html {
+  background-color: var(--eink-bg) !important;
+}
+
+// The pattern-background module uses a CSS-module class hash (e.g.
+// _patternBackground_module_css_hash). We target the module class generically.
+[class*="patternBackground"]::before {
+  opacity: var(--eink-pattern-opacity) !important;
+}
+
+// 4. Hide the "Switch to K Version" menu item (AngularJS K variant, not
+//    relevant for Einkgram). The href ends with "/k" by upstream convention.
+a.MenuItem[href$="/k"] {
+  display: none !important;
+}

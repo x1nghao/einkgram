@@ -1,13 +1,9 @@
-dist/build-stats.json
-node_modules
-.cache
-.env
-src/lib/gramjs/build/
-build-contest/
-tests/
-.idea
-*.iml
-dev/perf/screenshot*
-.DS_store
-.github/workflows/*
-!.github/workflows/package-and-publish.yml
+# Don't double-track telegram-tt's inner git
+/src/.git
+/src/node_modules
+/src/dist
+/src/.cache
+/src/.vite
+/src/.codex-vite-html.err.log
+/src/.DS_Store
+.DS_Store
