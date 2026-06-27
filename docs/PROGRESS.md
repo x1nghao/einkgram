@@ -588,3 +588,87 @@ This gate is **critical**. Without it:
 
 ### Commits
 - `679f9f5` v0.5.6 more detection strategies
+
+---
+
+## v0.6 — 2026-06-28 — Phase 5 + PWA deployment
+
+User asked for both A (Phase 5 media degradation) and
+B (PWA deployment) to be done in parallel.
+
+### Phase 5: media degradation (v0.6, commit 001282a)
+
+New file `src/src/styles/eink/_perf.scss` (6280 bytes)
+adds 5 categories of repaint-control rules, all gated
+on `html.eink-mode`:
+
+1. **Repaint containment** (BIGGEST WIN)
+   `contain: layout style paint` on `.chat-item`,
+   `.message-list-item`, `.ListItem`. Tells the
+   browser each chat item is an independent subtree.
+2. **Off-screen skip** via `content-visibility: auto`
+   + `contain-intrinsic-size: 0 64px`. Browser skips
+   rendering off-screen items, re-renders as they
+   approach viewport.
+3. **Hover suppression** — force `background-color`,
+   `border-color`, `box-shadow` to resting state on
+   `html.eink-mode *:hover`. Stops :hover repaints on
+   touch devices that misfire hover.
+4. **Catch-all animation kill** — `scroll-behavior: auto`,
+   `view-transition-name: none`, plus
+   `::view-transition-group(*) { animation: none }`.
+5. **Image rendering** — `image-rendering: pixelated` +
+   100ms `animation-delay` (let scroll settle before
+   triggering panel-wide update).
+
+Tests: 5 new (`perf.test.ts`), all green.
+
+### PWA deployment (v0.6.1, v0.6.2)
+
+| Commit | Change |
+|--------|--------|
+| a67d296 | vite.config.ts: production uses `einkgram.webmanifest` |
+| 72a81fb | Full deployment pipeline |
+
+Deployment artifacts:
+
+| File | Purpose |
+|------|---------|
+| `.github/workflows/deploy.yml` | GitHub Actions: build + Pages |
+| `dev/cleanup-dist.sh` | 230M → 67M (removes build-stats, symlinks 160→64 emoji) |
+| `dev/serve-dist.sh` | Local WiFi testing |
+| `docs/DEPLOY.md` | Step-by-step user guide |
+| `src/src/eink/deployValidation.test.ts` | 7 validation tests |
+
+### Why these are useful (not the v0.5.6 mistake)
+
+Earlier v0.5.6 spent effort on detection strategies for
+devices that can't run Einkgram. v0.6 changes the user
+experience on devices that CAN:
+
+- Phase 5 _perf.scss: less repaint, less ghost, less
+  flicker on Carta/Elektra/Desert panels
+- v0.6.2 deployment: actually put Einkgram on a real
+  E-Ink device for testing
+
+### Verification
+- `tsc --noEmit`: 0 errors
+- `vitest`: 97/97 pass (90 → 97, +7)
+- `vite build`: 7.79s
+- `cleanup-dist.sh`: 230M → 67M on disk
+- `tar -czf`: 38 MB gzipped (served size)
+
+### Zone delta (v0.6.0 + v0.6.1 + v0.6.2)
+- 🔴 Red: 0
+- 🟡 Yellow: 8 lines in vite.config.ts (manifest name change)
+- 🟢 Green: +24,000 bytes across 5 new files
+
+### Manual steps required
+1. Create GitHub repo (Einkgram/Einkgram or fork)
+2. `git remote add origin <url> && git push -u origin main`
+3. Settings → Pages → Source: "GitHub Actions"
+4. Wait for first build
+5. Open on E-Ink device
+
+I cannot complete steps 1-3 from the sandbox (no gh CLI,
+no GitHub auth tokens). All build artifacts are ready.
