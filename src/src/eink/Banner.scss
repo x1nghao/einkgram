@@ -1,0 +1,93 @@
+// Einkgram — First-switch banner (v0.3)
+//
+// Fixed-position, top-center banner shown the first time the user
+// switches E-Ink mode. Only visible in `html.eink-mode` — no banner
+// if the user is on regular color (the message is irrelevant then).
+//
+// All styles are unlayered (green-zone SCSS rule: eink stylesheets
+// stay unlayered so they win the cascade). 1-bit friendly: no
+// gradients, no shadows, no animations, no blur, solid 2px borders.
+//
+// Green zone — safe to modify freely.
+
+.eink-banner {
+  position: fixed;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  max-width: min(640px, calc(100vw - 16px));
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+
+  background: var(--eink-bg, #FFFFFF);
+  color: var(--eink-fg, #000000);
+  border: 2px solid var(--eink-fg, #000000);
+  border-radius: 0;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+.eink-banner__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.eink-banner__body strong {
+  font-weight: 700;
+}
+
+.eink-banner__actions {
+  display: flex;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+.eink-banner__btn {
+  background: var(--eink-bg, #FFFFFF);
+  color: var(--eink-fg, #000000);
+  border: 1px solid var(--eink-fg, #000000);
+  border-radius: 0;
+  padding: 6px 10px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  // No transitions, no shadow, no blur — E-Ink friendly.
+  appearance: none;
+  -webkit-appearance: none;
+
+  &:hover,
+  &:focus,
+  &:active {
+    background: var(--eink-fg, #000000);
+    color: var(--eink-bg, #FFFFFF);
+    outline: 2px solid var(--eink-fg, #000000);
+    outline-offset: 2px;
+  }
+}
+
+.eink-banner__btn--quiet {
+  font-weight: 500;
+  border-style: dashed;
+}
+
+// Hidden outside of eink mode — no point showing the banner
+// to users on regular screens.
+html:not(.eink-mode) .eink-banner {
+  display: none;
+}
+
+// On 1-bit panels, the banner should also be pure B&W.
+html.eink-mode.eink-1bit .eink-banner {
+  border-width: 1px;
+  font-weight: 700;
+}

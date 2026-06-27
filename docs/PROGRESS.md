@@ -157,3 +157,59 @@ E-Ink mode on/off without losing the regular Telegram look. Added a
 ---
 
 ## v1.0 — TODO
+
+## v0.3 — 2026-06-27 21:00
+
+**Theme**: Focus ring, ramp sync, first-time banner.
+
+### Changes (green zone, no upstream touched)
+
+1. **Visible focus ring** in `src/styles/eink/_mode.scss`
+   - 3px solid black with 2px offset for all focusable elements
+   - 1px ring + 2px gap for input/textarea/contenteditable
+   - Selection: solid black-on-white
+   - Disables caret blink + kills any inline animation/transition
+
+2. **`eink-paper` variant** in `_mode.scss`
+   - Soft sepia tint (15%) for RGB tablets emulating E-Ink
+   - User-switchable via `html.eink-mode.eink-paper`
+
+3. **Exposed ramp as CSS custom properties**
+   - `--eink-ramp-0` .. `--eink-ramp-15` on `:root` (16 levels)
+   - TS now reads them at runtime via `getComputedStyle`
+   - No more SCSS/TS drift between `$eink-ramp` and `RAMP_16`
+
+4. **`src/eink/ramp.ts` (NEW)** — ramp utilities
+   - `readRampFromCss()` — read --eink-ramp-N from `:root`
+   - `getRamp16(useCss)` — CSS-first, linear fallback
+   - `quantizeWithActiveRamp(gray)` — quantize to nearest ramp entry
+   - `RAMP_16` is now an alias for `RAMP_16_LINEAR` (kept for back-compat)
+   - `hexToGray()` helper added to `grayscale.ts`
+
+5. **`src/eink/Banner.tsx` + `Banner.scss` (NEW)** — first-switch banner
+   - Top-center, 2px black border, no shadow/gradient
+   - Shows only on `html.eink-mode` and only on first visit
+   - Buttons: "Try {next mode}" (cycles + dismisses), "Don't show again"
+   - Auto-hides in `prefers-reduced-motion` (CSS) — no JS
+   - **Not yet mounted** in Settings or App tree (red zone)
+     → pending 1-line JSX in `App.tsx` (same cost as v0.2 EinkToggle wiring)
+
+6. **Global `prefers-reduced-motion` block** in `_mode.scss`
+   - Honors user OS preference even on non-E-Ink devices
+   - Kills all animations + smooth scroll globally
+   - Doesn't conflict with the more aggressive `html.eink-mode` block
+
+### Files changed
+- `src/styles/eink/_mode.scss` (v0.2 → v0.3, +focus ring +paper variant)
+- `src/eink/grayscale.ts` (added `hexToGray`, `RAMP_16_LINEAR`, deprecated note)
+- `src/eink/ramp.ts` (NEW)
+- `src/eink/Banner.tsx` (NEW)
+- `src/eink/Banner.scss` (NEW)
+- `docs/PROGRESS.md` (this entry)
+- `docs/EINK_BEST_PRACTICES.md` (added v0.3 references)
+
+### Verification
+- `tsc --noEmit`: zero errors in `src/eink/`
+- `esbuild` per-file: 6 files OK
+- Vite HMR: 200 on all routes
+- `init.ts` still loaded via `index.html` script tag (no change)

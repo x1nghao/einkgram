@@ -10,13 +10,47 @@
 //
 // Green zone: no upstream code touched.
 
-export const RAMP_16 = [
+// v0.3: kept as fallback only. The active ramp is now read from CSS
+// custom properties (--eink-ramp-0..15) set by _mode.scss on :root.
+// See `ramp.ts` for the unified accessor.
+export const RAMP_16_LINEAR = [
   0, 17, 34, 51, 68, 85, 102, 119, 136, 153, 170, 187, 204, 221, 238, 255,
 ] as const;
+
+/**
+ * @deprecated in v0.3 — use `RAMP_16_LINEAR` (fallback) or
+ *   `getRamp16()` from `./ramp` (active, CSS-first).
+ * Kept for back-compat with code that imported the v0.2 symbol.
+ */
+export const RAMP_16 = RAMP_16_LINEAR;
 
 export function rgbToGray(r: number, g: number, b: number): number {
   // Rec. 601 luma — same weights browsers use for grayscale(1)
   return 0.299 * r + 0.587 * g + 0.114 * b;
+}
+
+/**
+ * Convert a CSS hex color (e.g. "#808080" or "#fff") to a
+ * Rec. 601 gray value in [0, 255]. Used by `ramp.ts` to parse
+ * the CSS-defined ramp.
+ */
+export function hexToGray(hex: string): number {
+  const h = hex.replace('#', '').trim();
+  let r: number;
+  let g: number;
+  let b: number;
+  if (h.length === 3) {
+    r = parseInt(h[0] + h[0], 16);
+    g = parseInt(h[1] + h[1], 16);
+    b = parseInt(h[2] + h[2], 16);
+  } else if (h.length === 6) {
+    r = parseInt(h.slice(0, 2), 16);
+    g = parseInt(h.slice(2, 4), 16);
+    b = parseInt(h.slice(4, 6), 16);
+  } else {
+    return 128; // malformed input — fall back to mid-gray
+  }
+  return rgbToGray(r, g, b);
 }
 
 export function quantize(gray: number, ramp: readonly number[] = RAMP_16): number {
