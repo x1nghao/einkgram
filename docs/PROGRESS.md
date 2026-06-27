@@ -536,3 +536,55 @@ Bigme, which had no clear default in v0.5.4.
 
 ### Commits
 - `863130a` v0.5.5 auto panel detection
+
+---
+
+## v0.5.6 — More detection strategies
+
+Adds 3 new strategies to `panelDetect.ts` and a gate helper
+to keep them from misfiring on regular devices.
+
+### New strategies
+
+| # | Strategy | Returns | Browser support |
+|---|----------|---------|-----------------|
+| 0 | `(update: slow/none)` | '4gray' if 'none', null if 'slow' | Chrome 130+ |
+| 3.5 | Physical screen size | 16gray (4 size classes) | Universal |
+| 3.6 | ppi-based panel res | 256gray (Carta HD), 16gray (Carta) | Universal |
+
+### New gate helper
+
+`isLikelyEInkDevice()` — returns true if any of:
+- `(update: slow)` matches
+- `(hover: none)` AND `(pointer: coarse)`
+- `screen.colorDepth` is 1, 2, 4, or 8
+- UA contains a known e-reader substring
+
+This gate is **critical**. Without it:
+- ppi strategy would return '256gray' for every iPhone
+  (dpr=3, ppi=288), turning their color Telegram into
+  banded gray mess
+- screen-size strategy would return '16gray' for every
+  phone smaller than 14" diagonal
+
+### Detection chain summary (v0.5.6)
+
+```
+0. (update: slow/none)  — strongest E-Ink signal
+1. monochrome media      — bits per pixel (0-8)
+2. CSS custom property   — --eink-panel / --onyx-panel
+3. screen.colorDepth     — gray vs color framebuffer
+3.5. physical size        — GATED diagonal in inches
+3.6. ppi                  — GATED Carta generation
+4. UA fingerprint         — Kindle/BOOX/Bigme/...
+5. touch-only heuristic   — coarse pointer + no hover
+```
+
+### Verification
+- `tsc --noEmit`: 0 errors
+- `vitest`: 90/90 pass (84 → 90, +6)
+- `vite build`: 7.93s
+- HMR: 200 on panelDetect
+
+### Commits
+- `679f9f5` v0.5.6 more detection strategies
