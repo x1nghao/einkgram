@@ -71,6 +71,8 @@ function isPanelType(v: string): v is PanelType {
   );
 }
 
+export { isPanelType };
+
 /**
  * Recommended dithering algorithm for a given panel.
  * Returns the algorithm name; the image processor dispatches on this.
@@ -142,3 +144,50 @@ export const PANEL_DESCRIPTIONS: Record<PanelType, string> = {
   'color-30000': '30,000+ colors (Gallery 3 advanced, ACeP)',
   unknown: 'Unknown — defaulting to 16-level grayscale',
 };
+
+// ─────────────────────────────────────────────────────────
+// Persistent active panel (v0.5)
+//
+// Stored in localStorage; used by the auto-processor to know
+// which algorithm to apply. If the user picks a panel from
+// Settings, it persists across reloads.
+// ─────────────────────────────────────────────────────────
+
+const STORAGE_KEY = 'eink-panel';
+
+export const ALL_PANEL_TYPES: PanelType[] = [
+  '1bit', '4gray', '16gray', '256gray', 'color-4096', 'color-30000',
+];
+
+/**
+ * Get the currently active panel.
+ * Reads from localStorage first, falls back to CSS, then to 'unknown'.
+ */
+export function getActivePanel(): PanelType {
+  if (typeof localStorage !== 'undefined') {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored && isPanelType(stored)) return stored;
+    } catch {
+      // localStorage might be blocked; fall through.
+    }
+  }
+  const fromCss = readPanelFromCss();
+  if (fromCss !== 'unknown') return fromCss;
+  return '16gray'; // safe default for Einkgram
+}
+
+/**
+ * Set the active panel and persist to localStorage.
+ * Also writes a CSS custom property so SCSS can react to it.
+ */
+export function setActivePanel(panel: PanelType): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, panel);
+  } catch {
+    // ignore
+  }
+  if (typeof document !== 'undefined') {
+    document.documentElement.style.setProperty('--eink-panel-type', panel);
+  }
+}

@@ -17,6 +17,8 @@
 // Green zone: no upstream code touched.
 
 import { useEinkMode, type EinkMode } from './useEinkMode';
+import { installAutoProcessor } from './autoProcess';
+import { getActivePanel, setActivePanel, type PanelType } from './panels';
 
 function applyInitialMode() {
   // Read storage and apply BEFORE React mounts to avoid FOUC.
@@ -79,6 +81,12 @@ function exposeDevApi(api: ReturnType<typeof registerShortcut>) {
     },
     set: (m: EinkMode) => api.setMode(m),
     current: () => api.currentFromDom(),
+    // v0.5: panel control (paired with autoProcess.ts)
+    setPanel: (p: PanelType) => {
+      setActivePanel(p);
+      return (window as any).__eink.reprocessImages(p);
+    },
+    activePanel: () => getActivePanel(),
   };
 }
 
@@ -151,4 +159,38 @@ if (document.readyState === 'loading') {
   });
 } else {
   window.addEventListener('load', () => void mountPageScrollButtons());
+}
+
+// ─────────────────────────────────────────────────────────
+// v0.5: Install the auto image processor.
+//
+// This runs alongside everything else and watches for new
+// <img> elements appearing in the DOM (chat switches, infinite
+// scroll). It applies panel-aware dithering in place.
+// ─────────────────────────────────────────────────────────
+
+function installImageProcessor() {
+  // Make sure the active panel CSS property is in sync with
+  // whatever the user has stored. This is what panels.ts reads
+  // when the image processor dispatches to an algorithm.
+  const panel = getActivePanel();
+  document.documentElement.style.setProperty('--eink-panel-type', panel);
+
+  // Install the global observer.
+  installAutoProcessor();
+
+  // Expose panel control on the dev API.
+  const api = (window as unknown as { __eink: Record<string, unknown> }).__eink;
+  api.setPanel = (p: PanelType) => {
+    setActivePanel(p);
+    return (api.reprocessImages as (p: PanelType) => Promise<number>)(p);
+  };
+  api.getPanel = () => getActivePanel();
+  api.allPanels = () => ['1bit', '4gray', '16gray', '256gray', 'color-4096', 'color-30000'];
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', installImageProcessor);
+} else {
+  installImageProcessor();
 }
