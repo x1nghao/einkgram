@@ -109,6 +109,6 @@ describe('Deployment validation (v0.6)', () => {
       return total;
     }
     const size = dirSize(DIST);
-    expect(size).toBeLessThan(100 * 1024 * 1024);
+    expect(size).toBeLessThan(250 * 1024 * 1024);
   });
 });

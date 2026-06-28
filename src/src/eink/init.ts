@@ -24,6 +24,7 @@ import { mountPageScrollButtons } from './init/scrollButtons';
 import { installImageProcessor } from './init/imageProcessor';
 import { hideEinkLoader } from './init/hideLoader';
 import { installForceLightTheme } from './init/forceLightTheme';
+import { installPatternSuppress } from './init/patternSuppress';
 
 import type { EinkMode } from './init/mode';
 import type { PanelType } from './panels';
@@ -62,19 +63,24 @@ scheduleHideLoader();
 //     or initial sync) gets reverted immediately.
 installForceLightTheme();
 
-// 2. Register the Ctrl+Shift+E shortcut. Returns a typed API.
+// 2. Suppress the colorful pattern background (v0.9.2).
+//    CSS Modules hash the class name at build time, so we
+//    use a runtime DOM scan instead of a static CSS selector.
+installPatternSuppress();
+
+// 3. Register the Ctrl+Shift+E shortcut. Returns a typed API.
 const shortcutApi = registerShortcut();
 
-// 3. Expose the dev API on window. The image processor will
+// 4. Expose the dev API on window. The image processor will
 //    extend it with setPanel / reprocessImages later.
 exposeDevApi(shortcutApi);
 
-// 4. Touch the React hook import so tree-shakers don't drop it.
+// 5. Touch the React hook import so tree-shakers don't drop it.
 //    (The hook is exposed for future components that want to
 //    read/write the E-Ink mode.)
 void useEinkMode;
 
-// 5. PWA manifest. Install ASAP so the browser picks it up
+// 6. PWA manifest. Install ASAP so the browser picks it up
 //    before the page even renders. Async-safe; we just queue.
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', installPwaManifest);
@@ -82,7 +88,7 @@ if (document.readyState === 'loading') {
   installPwaManifest();
 }
 
-// 6. Page scroll buttons. Wait for body + load to be safe.
+// 7. Page scroll buttons. Wait for body + load to be safe.
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('load', () => void mountPageScrollButtons());
@@ -91,7 +97,7 @@ if (document.readyState === 'loading') {
   window.addEventListener('load', () => void mountPageScrollButtons());
 }
 
-// 7. Image processor. Last because it depends on the panel CSS
+// 8. Image processor. Last because it depends on the panel CSS
 //    variables and autoProcess.ts setting up the global API.
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', installImageProcessor);
@@ -99,10 +105,10 @@ if (document.readyState === 'loading') {
   installImageProcessor();
 }
 
-// 8. Type-only re-exports for callers that need them.
+// 9. Type-only re-exports for callers that need them.
 export type { EinkMode, PanelType };
 
-// 9. Helper for step 1b above. Hides the static loading screen
+// 10. Helper for step 1b above. Hides the static loading screen
 //    on the next animation frame and again on `window.load`.
 //    Both are safe: the second call is a no-op if the element
 //    is already gone.
