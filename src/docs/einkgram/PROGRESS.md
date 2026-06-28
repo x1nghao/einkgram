@@ -3,6 +3,14 @@
 > Living log of what was done, what works, what's next.
 > Append-only. Never rewrite history. (See SYNC_STRATEGY.md.)
 
+## 2026-06-29 — Cloudflare Pages Deployed ✅
+- **URL:** https://einkgram.pages.dev/
+- **Method:** `wrangler pages deploy dist/`
+- **Files:** 11,455 uploaded, 28.67 sec
+- **Auth:** mints.long@gmail.com, OAuth token with pages (write) scope
+- **PWA manifest:** served at `/einkgram.webmanifest` (HTTP 200)
+- **Deploy cmd:** `cd src && wrangler pages deploy dist --project-name einkgram`
+
 ---
 
 ## v0.1 — 2026-06-27 — Bootstrap
