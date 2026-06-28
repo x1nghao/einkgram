@@ -40,6 +40,14 @@ const injectCss = (css: string) => {
 };
 
 const switchTheme = (theme: ThemeKey, withAnimation: boolean) => {
+  // Einkgram v0.11: E-Ink mode is always light. Ignore dark-theme
+  // requests when eink-mode class is present on <html>.
+  // This replaces the v0.9-v0.10 forceLightTheme MutationObserver
+  // (which was an overlay fighting upstream). Now it's in the source.
+  if (document.documentElement.classList.contains('eink-mode') && theme === 'dark') {
+    return;
+  }
+
   const themeClassName = `theme-${theme}`;
   if (document.documentElement.classList.contains(themeClassName)) {
     return;

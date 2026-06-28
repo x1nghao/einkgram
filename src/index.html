@@ -1,27 +1,19 @@
 <!DOCTYPE html>
 <!--
-  Einkgram v0.10 — anti-flicker architecture.
+  Einkgram v0.11
 
-  Why html.class is hard-coded here:
-  Upstream's theme logic runs in JS *after* the first paint.
-  If we let <html> start with no theme-* class, the browser
-  uses prefers-color-scheme to pick dark or light, and users
-  on dark-mode systems see a black flash for ~440ms before
-  init.ts adds theme-light. This is the flash your screenshot
-  shows (black header, dark sidebar, dark chat list).
+  html.class is hard-coded here because upstream's theme
+  logic runs in JS *after* the first paint. Without this,
+  users on dark-mode systems see a black flash before
+  init.ts adds theme-light.
 
-  By hard-coding theme-light + eink-mode in the HTML
-  attribute, the very first paint already has the right
-  classes. The actual visual styling (colors, contrast,
-  dithering) comes from inline CSS in the next <style>
-  block, which is parsed before any external stylesheet.
-
-  init.ts will then read localStorage for the user's
-  preferred eink variant (1bit / paper / off) and adjust
-  the class accordingly — without a visible flash because
-  the values are already what the user last selected.
+  v0.11: Removed filter:grayscale(1) — E-Ink drivers handle
+  grayscale at the display level. Removed all !important
+  CSS variable overrides — upstream's light-mode values
+  are correct. Removed pattern-background workaround —
+  _patternBackground now has the eink-mode gate in source.
 -->
-<html lang="en" translate="no" class="notranslate theme-light eink-mode eink-paper">
+<html lang="en" translate="no" class="notranslate theme-light eink-mode">
 
 <head>
   <meta charset="UTF-8">
@@ -73,95 +65,25 @@
   <link rel="manifest" id="the-manifest-placeholder" href="./%TG_MANIFEST%">
 
   <script vite-ignore src="./redirect.js"></script>
+
   <!--
-    Einkgram v0.10 — anti-flicker inline CSS.
+    Einkgram v0.11 — anti-flicker baseline only.
 
-    This block paints BEFORE any external stylesheet and
-    BEFORE JS runs. It locks the body to paper-white,
-    ink-black, no pattern background, and 16-gray filter,
-    so the first frame the user sees is already E-Ink-ready
-    regardless of system color-scheme or theme state.
+    We set paper-white background + light color-scheme in
+    a blocking <style> so the first paint is white even if
+    the system prefers dark. No !important overrides — the
+    upstream SCSS light-mode variables are correct.
 
-    Specificity is intentionally aggressive (!important)
-    because upstream has many !important rules of its own
-    and we must win on the very first paint.
-
-    See src/styles/eink/_mode.scss for the long-term CSS
-    that takes over after the stylesheets load. The two
-    MUST stay in sync.
+    The aggressive 28-var !important block from v0.10 is
+    DELETED. filter:grayscale(1) is DELETED (E-Ink drivers
+    handle this at the display level).
   -->
   <style>
-    /* 1. Lock the document to a paper-white / ink-black baseline. */
-    html.theme-light.eink-mode,
-    html.theme-light.eink-mode body {
-      background-color: #ffffff !important;
-      color: #000000 !important;
-      color-scheme: light !important;
-    }
-
-    /* 2. Force light scrollbars and form controls even if the
-          browser was about to render them dark. */
-    html.theme-light.eink-mode {
+    html, body {
+      background-color: #ffffff;
+      color: #000000;
       color-scheme: light;
     }
-
-    /* 3. E-Ink grayscale filter on the whole UI, including the
-          brief moment before _mode.scss has loaded. */
-    html.theme-light.eink-mode {
-      filter: grayscale(1) contrast(1.05);
-    }
-
-    /* 4. Override upstream's theme-light CSS variables. Upstream
-          injects these via <style> in JS, but uses dark values
-          for many of them. We force the E-Ink palette with
-          !important, which beats any specificity. This block
-          MUST be kept in sync with src/styles/eink/_tokens.scss. */
-    html.theme-light.eink-mode {
-      --color-background: #ffffff !important;
-      --color-background-secondary: #f4f4f5 !important;
-      --color-background-secondary-accent: #e4e4e5 !important;
-      --color-background-sidebar: #e4e4e5 !important;
-      --color-background-own: #eeffde !important;
-      --color-background-selected: #f4f4f5 !important;
-      --color-text: #000000 !important;
-      --color-text-secondary: #707579 !important;
-      --color-icon-secondary: #707579 !important;
-      --color-borders: #dadce0 !important;
-      --color-borders-input: #dadce0 !important;
-      --color-dividers: #c8c6cc !important;
-      --color-primary: #3390ec !important;
-      --color-links: #3390ec !important;
-      --color-chat-hover: #f4f4f5 !important;
-      --color-chat-active: #3390ec !important;
-      --color-chat-username: #3C7EB0 !important;
-      --color-item-hover: #f4f4f5 !important;
-      --color-item-active: #ededed !important;
-      --color-reply-hover: #f4f4f5 !important;
-      --color-reply-active: #ededed !important;
-      --color-message-reaction: #ebf3fd !important;
-      --color-message-reaction-hover: #c5def9 !important;
-      --color-message-reaction-own: #cef0ba !important;
-      --color-message-reaction-hover-own: #b5e0a4 !important;
-      --color-composer-button: #707579cc !important;
-      --color-toast-background: #202020cc !important;
-      --color-error: #e53935 !important;
-      --color-success: #00c73e !important;
-      --color-warning: #fb8c00 !important;
-    }
-
-    /* 5. The pattern-background div is rendered with a CSS
-          Module hash (Y7owXZmb at build time). We don't know
-          the exact hash, so we use the structural hint: any
-          direct child of body that is position:absolute and
-          covers the viewport is the pattern overlay. Until
-          init/patternSuppress.ts runs and tags it with
-          data-eink-no-pattern, hide it via opacity. */
-    html.theme-light.eink-mode body > div[style*="position: absolute"],
-    html.theme-light.eink-mode body > div[style*="position: fixed"] {
-      background-image: none !important;
-    }
-
-    /* 6. Upstream layer order for everything else. */
     @layer reset, variables, ui, components;
     @layer ui {
       @layer tablist, spinner, button, input, layout;
@@ -169,59 +91,35 @@
   </style>
 </head>
 
-<body id="root" style="margin: 0; background-color: #ffffff; color: #000000;">
+<body id="root">
   <noscript>
     <video src="./nojs.mp4" class="nojs-video" muted loop autoplay playsinline disablePictureInPicture></video>
     <h1>Telegram Web</h1>
     <p>Please, enable JavaScript to open the app.</p>
   </noscript>
-  <!-- Einkgram v0.9: pre-React loading screen. Shown before
-       React mounts and replaced/hidden by src/eink/init.ts
-       once the app is interactive. Pure inline CSS, no JS
-       required, so it paints on the very first frame with
-       zero dependencies. -->
+
+  <!-- Einkgram v0.9: pre-React loading screen -->
   <div id="eink-loading-screen" role="status" aria-live="polite" style="
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
-    padding: 2rem;
-    background-color: #ffffff;
-    color: #000000;
+    position: fixed; inset: 0; z-index: 9999;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    width: 100%; height: 100%; padding: 2rem;
+    background-color: #ffffff; color: #000000;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-size: 1rem;
-    font-weight: 500;
-    line-height: 1.5;
-    text-align: center;
-    box-sizing: border-box;
-    margin: 0;
+    font-size: 1rem; font-weight: 500;
+    line-height: 1.5; text-align: center;
+    box-sizing: border-box; margin: 0;
   ">
     <div style="margin-bottom: 1.5rem; letter-spacing: 0.025em;">Loading Einkgram…</div>
     <div role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="25" style="
-      position: relative;
-      width: 16rem;
-      max-width: 80%;
-      height: 0.5rem;
-      background-color: #ffffff;
-      border: 2px solid #000000;
-      box-sizing: content-box;
-      overflow: hidden;
+      position: relative; width: 16rem; max-width: 80%; height: 0.5rem;
+      background-color: #ffffff; border: 2px solid #000000;
+      box-sizing: content-box; overflow: hidden;
     ">
-      <div style="
-        position: absolute;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        width: 25%;
-        background-color: #000000;
-      "></div>
+      <div style="position: absolute; top: 0; left: 0; bottom: 0; width: 25%; background-color: #000000;"></div>
     </div>
   </div>
+
   <div id="portals"></div>
   <script vite-ignore src="./compatTest.js"></script>
   <script type="module" src="./src/index.tsx"></script>

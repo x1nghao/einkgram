@@ -51,7 +51,10 @@
     filter: blur(12px);
   }
 
-  &:not(.customBgImage):not(.customBgColor)::after {
+  // Einkgram v0.11: Skip the colorful pattern overlay when
+  // E-Ink mode is active. E-Ink panels don't benefit from
+  // decorative patterns and drawing them wastes repaint budget.
+  &:not(.customBgImage):not(.customBgColor):not(:global(html.eink-mode) &)::after {
     @include mixins.chat-pattern-styles("../assets/pattern.svg");
   }
 }

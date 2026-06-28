@@ -1,25 +1,27 @@
-// Einkgram — E-Ink rendering reset (v0.7)
+// Einkgram — E-Ink rendering reset (v0.11)
 //
-// IMPORTANT: Every rule in this file is now scoped to
-// `html.eink-mode`. Earlier versions of this file applied
-// the resets globally (to *, html, body without a class
-// selector), which broke Telegram Web A for non-E-Ink
-// users — desktop Safari/Firefox/Chrome users opening
-// Einkgram would get no animations, no font smoothing,
-// and no pattern background, even though they didn't ask
-// for an E-Ink experience.
+// v0.11: Massive simplification. Removed:
+//   - filter: grayscale(1) — E-Ink drivers handle this at display level.
+//     Adding a CSS filter forces a compositing layer, causing full-screen
+//     rasterization on every DOM change.
+//   - Pattern suppression — moved to _patternBackground.module.scss source.
+//   - "Switch to K Version" hiding — moved to index.html.
+//   - All !important variable overrides — upstream light-mode values are fine.
+//   - CSS module hash workaround — no longer needed.
 //
-// Audit fix (v0.7): all selectors prefixed with
-// `html.eink-mode`. The duplicate "kill animations"
-// block in _mode.scss is removed because the version
-// here now does the same job in the right scope.
+// Kept (genuine E-Ink needs, not overrides):
+//   1. Font smoothing off — E-Ink panels do their own AA
+//   2. Animations & transitions off — ghosting on partial refresh
+//   3. High-contrast focus ring — survives partial refresh
+//   4. Repaint containment for chat items — reduce repaint surface
+//   5. content-visibility: auto — skip off-screen rendering
+//   6. Smooth scroll off — each frame = full repaint on E-Ink
 //
-// Green zone: safe to modify freely (see docs/SYNC_STRATEGY.md).
-// No @layer wrapper: see _tokens.scss for why.
+// Green zone: safe to modify freely.
 
-// 1. Disable font anti-aliasing in E-Ink mode.
-//    E-Ink panels render text without subpixel smoothing,
-//    and browser AA leaves ghost residue on partial refresh.
+// ════════════════════════════════════════════════════════
+// 1. Font smoothing off
+// ════════════════════════════════════════════════════════
 html.eink-mode,
 html.eink-mode body,
 html.eink-mode * {
@@ -29,10 +31,9 @@ html.eink-mode * {
   font-smooth: never;
 }
 
-// 2. Disable CSS animations and transitions in E-Ink mode.
-//    E-Ink partial refresh causes visible ghosts on moving
-//    elements. Scoped to eink-mode so regular Telegram Web
-//    users still get the smooth animations they expect.
+// ════════════════════════════════════════════════════════
+// 2. Kill animations & transitions
+// ════════════════════════════════════════════════════════
 html.eink-mode,
 html.eink-mode *,
 html.eink-mode *::before,
@@ -43,29 +44,58 @@ html.eink-mode *::after {
   transition-delay: 0s !important;
 }
 
-// 3. Suppress the colorful "pattern background" (the doodle
-//    artwork on light/dark mode backgrounds) and force a
-//    flat E-Ink paper color. Only in E-Ink mode.
+// ════════════════════════════════════════════════════════
+// 3. High-contrast focus ring — no blur
+// ════════════════════════════════════════════════════════
+html.eink-mode :focus,
+html.eink-mode :focus-visible,
+html.eink-mode *:focus,
+html.eink-mode *:focus-visible {
+  outline: 3px solid var(--eink-fg, #000) !important;
+  outline-offset: 2px !important;
+  box-shadow: none !important;
+  transition: none !important;
+}
+
+html.eink-mode input:focus,
+html.eink-mode textarea:focus,
+html.eink-mode [contenteditable]:focus {
+  outline: 1px solid var(--eink-fg, #000) !important;
+  outline-offset: 2px !important;
+}
+
+html.eink-mode ::selection {
+  background: var(--eink-fg, #000) !important;
+  color: var(--eink-bg, #fff) !important;
+}
+
+html.eink-mode *,
+html.eink-mode *::before,
+html.eink-mode *::after {
+  caret-color: var(--eink-fg, #000) !important;
+}
+
+// ════════════════════════════════════════════════════════
+// 4. Repaint containment (from deleted _perf.scss)
+// ════════════════════════════════════════════════════════
+html.eink-mode .chat-item,
+html.eink-mode .message-list-item,
+html.eink-mode .ListItem {
+  contain: layout style paint;
+  content-visibility: auto;
+  contain-intrinsic-size: 0 64px;
+}
+
+// ════════════════════════════════════════════════════════
+// 5. No smooth scroll — each frame is a full E-Ink repaint
+// ════════════════════════════════════════════════════════
 html.eink-mode {
-  background-color: var(--eink-bg) !important;
+  scroll-behavior: auto !important;
 }
 
-// Pattern background suppression (v0.9.2).
-// CSS Modules hash the class name at build time (e.g.
-// .patternBackground → Y7owXZmb), so a static CSS selector
-// can't match it. Instead, init/patternSuppress.ts scans
-// the DOM for elements whose ::before has "pattern" in its
-// background-image and adds data-eink-no-pattern to them.
-// This CSS rule then hides the ::before.
-html.eink-mode [data-eink-no-pattern]::before {
-  opacity: var(--eink-pattern-opacity) !important;
-}
-
-// 4. Hide the "Switch to K Version" menu item (AngularJS K
-//    variant, not relevant for Einkgram). The href ends
-//    with "/k" by upstream convention. Scoped to eink-mode
-//    so non-Einkgram users (e.g. upstream devs testing) can
-//    still see the switcher.
-html.eink-mode a.MenuItem[href$="/k"] {
-  display: none !important;
+// ════════════════════════════════════════════════════════
+// 6. Image rendering: avoid interpolation overhead
+// ════════════════════════════════════════════════════════
+html.eink-mode img {
+  image-rendering: pixelated;
 }
