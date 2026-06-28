@@ -1,5 +1,27 @@
 <!DOCTYPE html>
-<html lang="en" translate="no" class="notranslate">
+<!--
+  Einkgram v0.10 — anti-flicker architecture.
+
+  Why html.class is hard-coded here:
+  Upstream's theme logic runs in JS *after* the first paint.
+  If we let <html> start with no theme-* class, the browser
+  uses prefers-color-scheme to pick dark or light, and users
+  on dark-mode systems see a black flash for ~440ms before
+  init.ts adds theme-light. This is the flash your screenshot
+  shows (black header, dark sidebar, dark chat list).
+
+  By hard-coding theme-light + eink-mode in the HTML
+  attribute, the very first paint already has the right
+  classes. The actual visual styling (colors, contrast,
+  dithering) comes from inline CSS in the next <style>
+  block, which is parsed before any external stylesheet.
+
+  init.ts will then read localStorage for the user's
+  preferred eink variant (1bit / paper / off) and adjust
+  the class accordingly — without a visible flash because
+  the values are already what the user last selected.
+-->
+<html lang="en" translate="no" class="notranslate theme-light eink-mode eink-paper">
 
 <head>
   <meta charset="UTF-8">
@@ -51,7 +73,95 @@
   <link rel="manifest" id="the-manifest-placeholder" href="./%TG_MANIFEST%">
 
   <script vite-ignore src="./redirect.js"></script>
+  <!--
+    Einkgram v0.10 — anti-flicker inline CSS.
+
+    This block paints BEFORE any external stylesheet and
+    BEFORE JS runs. It locks the body to paper-white,
+    ink-black, no pattern background, and 16-gray filter,
+    so the first frame the user sees is already E-Ink-ready
+    regardless of system color-scheme or theme state.
+
+    Specificity is intentionally aggressive (!important)
+    because upstream has many !important rules of its own
+    and we must win on the very first paint.
+
+    See src/styles/eink/_mode.scss for the long-term CSS
+    that takes over after the stylesheets load. The two
+    MUST stay in sync.
+  -->
   <style>
+    /* 1. Lock the document to a paper-white / ink-black baseline. */
+    html.theme-light.eink-mode,
+    html.theme-light.eink-mode body {
+      background-color: #ffffff !important;
+      color: #000000 !important;
+      color-scheme: light !important;
+    }
+
+    /* 2. Force light scrollbars and form controls even if the
+          browser was about to render them dark. */
+    html.theme-light.eink-mode {
+      color-scheme: light;
+    }
+
+    /* 3. E-Ink grayscale filter on the whole UI, including the
+          brief moment before _mode.scss has loaded. */
+    html.theme-light.eink-mode {
+      filter: grayscale(1) contrast(1.05);
+    }
+
+    /* 4. Override upstream's theme-light CSS variables. Upstream
+          injects these via <style> in JS, but uses dark values
+          for many of them. We force the E-Ink palette with
+          !important, which beats any specificity. This block
+          MUST be kept in sync with src/styles/eink/_tokens.scss. */
+    html.theme-light.eink-mode {
+      --color-background: #ffffff !important;
+      --color-background-secondary: #f4f4f5 !important;
+      --color-background-secondary-accent: #e4e4e5 !important;
+      --color-background-sidebar: #e4e4e5 !important;
+      --color-background-own: #eeffde !important;
+      --color-background-selected: #f4f4f5 !important;
+      --color-text: #000000 !important;
+      --color-text-secondary: #707579 !important;
+      --color-icon-secondary: #707579 !important;
+      --color-borders: #dadce0 !important;
+      --color-borders-input: #dadce0 !important;
+      --color-dividers: #c8c6cc !important;
+      --color-primary: #3390ec !important;
+      --color-links: #3390ec !important;
+      --color-chat-hover: #f4f4f5 !important;
+      --color-chat-active: #3390ec !important;
+      --color-chat-username: #3C7EB0 !important;
+      --color-item-hover: #f4f4f5 !important;
+      --color-item-active: #ededed !important;
+      --color-reply-hover: #f4f4f5 !important;
+      --color-reply-active: #ededed !important;
+      --color-message-reaction: #ebf3fd !important;
+      --color-message-reaction-hover: #c5def9 !important;
+      --color-message-reaction-own: #cef0ba !important;
+      --color-message-reaction-hover-own: #b5e0a4 !important;
+      --color-composer-button: #707579cc !important;
+      --color-toast-background: #202020cc !important;
+      --color-error: #e53935 !important;
+      --color-success: #00c73e !important;
+      --color-warning: #fb8c00 !important;
+    }
+
+    /* 5. The pattern-background div is rendered with a CSS
+          Module hash (Y7owXZmb at build time). We don't know
+          the exact hash, so we use the structural hint: any
+          direct child of body that is position:absolute and
+          covers the viewport is the pattern overlay. Until
+          init/patternSuppress.ts runs and tags it with
+          data-eink-no-pattern, hide it via opacity. */
+    html.theme-light.eink-mode body > div[style*="position: absolute"],
+    html.theme-light.eink-mode body > div[style*="position: fixed"] {
+      background-image: none !important;
+    }
+
+    /* 6. Upstream layer order for everything else. */
     @layer reset, variables, ui, components;
     @layer ui {
       @layer tablist, spinner, button, input, layout;
