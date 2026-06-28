@@ -1040,3 +1040,29 @@ user is: white page → "Loading Einkgram…" + 25% bar
 
 **Result**: Flicker-test confirms first white bg sample at 83ms (was 440ms black→white). Zero black frames. 8/9 pixel sample points are white. 124/124 tests pass.
 
+### v0.11 — 2026-06-29 01:33
+
+**核心变更**：删除所有"覆盖上游"的代码，直接改源头。移除 CSS filter。
+
+删除 1050 行，新增 177 行，净减 873 行。
+
+**原则1：不覆盖，改源头**
+-  加 eink-mode gate（不再运行时 DOM 扫描）
+-  加 eink-mode 阻止切黑底（不再 MutationObserver 拦截）
+-  154→129行，删全部 !important 变量覆盖
+
+**原则2：不主动全屏刷新**
+- 删除 ——CSS filter 让浏览器创建合成层，每次 DOM 变动都全屏 rasterize
+- 墨水屏驱动自己处理灰度转换，不需要 CSS 模拟
+
+**删除的覆盖层文件 (7个)**：
+-  + test
+- 
+-  (130行，filter+focusring)
+-  + test
+- 
+
+**合并保留项**：focus ring、contain、content-visibility 合并到 。
+
+上线: https://einkgram.pages.dev/ · tsc 零错 · 94/94 测试通过 · 生产构建 67MB
+
