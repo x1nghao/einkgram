@@ -1030,3 +1030,13 @@ user is: white page → "Loading Einkgram…" + 25% bar
   show the install banner; iOS users need to "Add to
   Home Screen" manually — add a banner inside the app
   for that case)
+### v0.10 — 2026-06-29 01:20
+
+**Problem**: Dev screen looked dark (black chat list, black header). 3 root causes:
+
+1. **Inline style flash**: Upstream sets `html.style.setProperty('--color-background', ...)` to dark at boot, AFTER first paint. Caused ~440ms black flash.
+2. **Missing theme-light class**: `_variables.scss` gate on `html.theme-light` for light vars, but `<html>` had no class at paint time. Fix: inline CSS in `index.html` + hardcode `theme-light` in `init.ts` force theme.
+3. **Upstream injected style overrides**: `theme.ts` writes `html.theme-light { --color-background: ... }` into a `<style>` after paint, re-darkening even with correct class. Fix: `!important` variable override in inline CSS block (28 vars).
+
+**Result**: Flicker-test confirms first white bg sample at 83ms (was 440ms black→white). Zero black frames. 8/9 pixel sample points are white. 124/124 tests pass.
+
