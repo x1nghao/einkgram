@@ -1066,3 +1066,17 @@ user is: white page → "Loading Einkgram…" + 25% bar
 
 上线: https://einkgram.pages.dev/ · tsc 零错 · 94/94 测试通过 · 生产构建 67MB
 
+### v0.12 — 2026-07-01 01:00
+
+**Fix 6 code-audit issues**:
+
+1. ✅ Delete Loading.tsx + Loading.scss — zero references, dead code (-118 lines)
+2. ✅ Remove image-rendering:pixelated — broke photo rendering
+3. ✅ Remove .chat-item/.message-list-item — guessed selectors. Keep only .ListItem (real upstream plain class)
+4. ✅ Remove font-smooth:never — non-standard, ignored by all engines
+5. ✅ Narrow caret-color from \* to :is(input,textarea,[contenteditable])
+6. ✅ Remove 7 unused CSS variables from \_tokens.scss (keep --eink-bg, --eink-fg, \-ramp)
+7. ✅ No font-family override — E-Ink panels ≥227ppi render system fonts well
+
+Net: -178/+37 lines. tsc 0 errors. 94/94 tests. Deployed to https://einkgram.pages.dev/ (preview https://7076f0a1.einkgram.pages.dev/)
+
