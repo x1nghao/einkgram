@@ -1,26 +1,19 @@
-// Einkgram — E-Ink rendering reset (v0.11)
+// Einkgram — E-Ink rendering reset (v0.12)
 //
-// v0.11: Massive simplification. Removed:
-//   - filter: grayscale(1) — E-Ink drivers handle this at display level.
-//     Adding a CSS filter forces a compositing layer, causing full-screen
-//     rasterization on every DOM change.
-//   - Pattern suppression — moved to _patternBackground.module.scss source.
-//   - "Switch to K Version" hiding — moved to index.html.
-//   - All !important variable overrides — upstream light-mode values are fine.
-//   - CSS module hash workaround — no longer needed.
-//
-// Kept (genuine E-Ink needs, not overrides):
-//   1. Font smoothing off — E-Ink panels do their own AA
-//   2. Animations & transitions off — ghosting on partial refresh
-//   3. High-contrast focus ring — survives partial refresh
-//   4. Repaint containment for chat items — reduce repaint surface
-//   5. content-visibility: auto — skip off-screen rendering
-//   6. Smooth scroll off — each frame = full repaint on E-Ink
+// v0.12 fixes from code audit:
+//   - Removed image-rendering:pixelated — breaks photos.
+//   - Removed .chat-item/.message-list-item — guessed selectors.
+//     .ListItem is the real upstream class (ListItem.scss, plain class).
+//   - Removed font-smooth:never — non-standard, ignored by all engines.
+//   - Narrowed caret-color from universal * to editable elements only.
+//   - No font-family override — E-Ink panels at ≥227ppi render system
+//     fonts well; the upstream Roboto/system-ui stack is correct.
 //
 // Green zone: safe to modify freely.
 
 // ════════════════════════════════════════════════════════
-// 1. Font smoothing off
+// 1. Font smoothing off — E-Ink panels do their own AA.
+//    Subpixel AA from browsers leaves ghost residue.
 // ════════════════════════════════════════════════════════
 html.eink-mode,
 html.eink-mode body,
@@ -28,11 +21,11 @@ html.eink-mode * {
   -webkit-font-smoothing: none;
   -moz-osx-font-smoothing: auto;
   text-rendering: geometricPrecision;
-  font-smooth: never;
 }
 
 // ════════════════════════════════════════════════════════
-// 2. Kill animations & transitions
+// 2. Kill animations & transitions — ghosting on partial
+//    refresh.
 // ════════════════════════════════════════════════════════
 html.eink-mode,
 html.eink-mode *,
@@ -45,12 +38,11 @@ html.eink-mode *::after {
 }
 
 // ════════════════════════════════════════════════════════
-// 3. High-contrast focus ring — no blur
+// 3. High-contrast focus ring — E-Ink smears anything with
+//    blur. Solid 3px ring survives partial refresh.
 // ════════════════════════════════════════════════════════
 html.eink-mode :focus,
-html.eink-mode :focus-visible,
-html.eink-mode *:focus,
-html.eink-mode *:focus-visible {
+html.eink-mode :focus-visible {
   outline: 3px solid var(--eink-fg, #000) !important;
   outline-offset: 2px !important;
   box-shadow: none !important;
@@ -69,17 +61,19 @@ html.eink-mode ::selection {
   color: var(--eink-bg, #fff) !important;
 }
 
-html.eink-mode *,
-html.eink-mode *::before,
-html.eink-mode *::after {
+// v0.12: narrowed from universal * to only elements that can
+// actually receive a caret.
+html.eink-mode :is(input, textarea, [contenteditable]),
+html.eink-mode :is(input, textarea, [contenteditable])::before,
+html.eink-mode :is(input, textarea, [contenteditable])::after {
   caret-color: var(--eink-fg, #000) !important;
 }
 
 // ════════════════════════════════════════════════════════
-// 4. Repaint containment (from deleted _perf.scss)
+// 4. Repaint containment for list items.
+//    .ListItem is a real upstream plain class
+//    (src/components/ui/ListItem.scss → .ListItem { ... }).
 // ════════════════════════════════════════════════════════
-html.eink-mode .chat-item,
-html.eink-mode .message-list-item,
 html.eink-mode .ListItem {
   contain: layout style paint;
   content-visibility: auto;
@@ -87,15 +81,8 @@ html.eink-mode .ListItem {
 }
 
 // ════════════════════════════════════════════════════════
-// 5. No smooth scroll — each frame is a full E-Ink repaint
+// 5. No smooth scroll — each frame is a full E-Ink repaint.
 // ════════════════════════════════════════════════════════
 html.eink-mode {
   scroll-behavior: auto !important;
-}
-
-// ════════════════════════════════════════════════════════
-// 6. Image rendering: avoid interpolation overhead
-// ════════════════════════════════════════════════════════
-html.eink-mode img {
-  image-rendering: pixelated;
 }

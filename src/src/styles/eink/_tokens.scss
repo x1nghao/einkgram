@@ -1,14 +1,18 @@
-// Einkgram — E-Ink design tokens (v0.11)
+// Einkgram — E-Ink design tokens (v0.12)
 //
-// Exposes --eink-* CSS custom properties on :root.
+// Exposes only --eink-bg and --eink-fg on :root.
 // Used by _reset.scss (focus ring, carets, selections).
-// E-Ink mode class is handled by html.eink-mode.
 //
-// v0.11: Stripped out !important color variable overrides.
-// Upstream's light-mode palette is correct.
+// v0.12: Removed 6 unused variables (--eink-fg-strong,
+// --eink-fg-muted, --eink-fg-hint, --eink-border,
+// --eink-divider, --eink-accent). Kept --eink-bg, --eink-fg.
+//
+// $eink-ramp is retained as the perceptual reference ramp.
+// ramp.ts reads --eink-ramp-* from getComputedStyle;
+// since these are not emitted, ramp.ts falls back to its
+// linear ramp (expected).
 //
 // Green zone: safe to modify freely.
-// No @layer wrapper: unlayered CSS has highest specificity.
 
 $eink-100: #ffffff;
 $eink-75:  #c8c8c8;
@@ -16,7 +20,7 @@ $eink-50:  #808080;
 $eink-25:  #404040;
 $eink-0:   #000000;
 
-// 16-grayscale ramp for image dithering
+// 16-grayscale perceptual ramp (SCSS map — not emitted as CSS)
 $eink-ramp: (
   0:  $eink-0,
   1:  #1c1c1c, 2: #383838, 3: #545454, 4: $eink-25,
@@ -28,23 +32,9 @@ $eink-ramp: (
 :root {
   --eink-bg: #{$eink-100};
   --eink-fg: #{$eink-25};
-  --eink-fg-strong: #{$eink-0};
-  --eink-fg-muted: #{$eink-50};
-  --eink-fg-hint: #{$eink-75};
-  --eink-border: #{$eink-75};
-  --eink-divider: #{$eink-75};
-  --eink-accent: #{$eink-0};
-  --eink-pattern-opacity: 0;
 }
 
 :root.theme-dark {
   --eink-bg: #{$eink-0};
   --eink-fg: #{$eink-75};
-  --eink-fg-strong: #{$eink-100};
-  --eink-fg-muted: #{$eink-50};
-  --eink-fg-hint: #{$eink-25};
-  --eink-border: #{$eink-25};
-  --eink-divider: #{$eink-25};
-  --eink-accent: #{$eink-100};
-  --eink-pattern-opacity: 0;
 }
