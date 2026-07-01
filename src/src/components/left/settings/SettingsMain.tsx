@@ -25,6 +25,10 @@ import EinkToggle from '../../../eink/EinkToggle';
 // Einkgram — Panel selector (v0.5.3)
 // One more import + one ListItem = panel type dropdown.
 import PanelSelector from '../../../eink/PanelSelector';
+// Einkgram — v0.15: useEinkMode for click-to-cycle in ListItem.
+import { useEinkMode } from '../../../eink/useEinkMode';
+// Einkgram — v0.15: cycleActivePanel for the panel ListItem row.
+import { cycleActivePanel } from '../../../eink/panels';
 
 import GramIcon from '../../common/icons/GramIcon';
 import StarIcon from '../../common/icons/StarIcon';
@@ -73,6 +77,11 @@ const SettingsMain: FC<OwnProps & StateProps> = ({
   const [isSupportDialogOpen, openSupportDialog, closeSupportDialog] = useFlag(false);
 
   const lang = useLang();
+  // Einkgram — v0.15: use cycle for ListItem click handler.
+  const { cycle: cycleEinkMode } = useEinkMode();
+  // Einkgram — v0.15: panel cycle handler (wraps in LastCallback to
+  // avoid re-rendering ListItem on every parent re-render).
+  const cycleEinkPanel = useLastCallback(() => { cycleActivePanel(); });
 
   useEffect(() => {
     if (currentUserId) {
@@ -124,11 +133,21 @@ const SettingsMain: FC<OwnProps & StateProps> = ({
           >
             {lang('MenuAnimations')}
           </ListItem>
-          <ListItem narrow>
-            <EinkToggle />
+          <ListItem
+            narrow
+            icon="brush"
+            onClick={cycleEinkMode}
+            rightElement={<EinkToggle />}
+          >
+            <span className="flex-grow">E-Ink mode</span>
           </ListItem>
-          <ListItem narrow>
-            <PanelSelector />
+          <ListItem
+            narrow
+            icon="animations"
+            onClick={cycleEinkPanel}
+            rightElement={<PanelSelector />}
+          >
+            <span className="flex-grow">Display panel</span>
           </ListItem>
           <ListItem
             icon="unmute"

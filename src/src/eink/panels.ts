@@ -232,3 +232,31 @@ export function setActivePanelAuto(): void {
     document.documentElement.style.setProperty('--eink-panel-type', 'auto');
   }
 }
+
+/**
+ * Cycle through the panel list: auto → 1bit → 4gray → ...
+ * → 30000 → auto. Persists via setActivePanel/setActivePanelAuto.
+ */
+export function cycleActivePanel(): PanelType {
+  const current = getActivePanel();
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored === 'auto') {
+      setActivePanel(ALL_PANEL_TYPES[0]);
+      window.dispatchEvent(new CustomEvent('eink-panel-changed'));
+      return ALL_PANEL_TYPES[0];
+    }
+    const idx = ALL_PANEL_TYPES.indexOf(current);
+    if (idx === -1) {
+      setActivePanel(ALL_PANEL_TYPES[0]);
+      window.dispatchEvent(new CustomEvent('eink-panel-changed'));
+      return ALL_PANEL_TYPES[0];
+    }
+    const next = ALL_PANEL_TYPES[(idx + 1) % ALL_PANEL_TYPES.length];
+    setActivePanel(next);
+    window.dispatchEvent(new CustomEvent('eink-panel-changed'));
+    return next;
+  } catch {
+    return current;
+  }
+}

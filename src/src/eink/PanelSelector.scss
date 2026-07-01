@@ -1,30 +1,14 @@
-// Einkgram — PanelSelector styles (v0.14)
+// Einkgram — PanelSelector styles (v0.15)
 //
-// v0.14: stripped to match upstream ListItem visual language.
-//   - No more <select> dropdown
-//   - No more 2px border around the row
-//   - Just a right-aligned value text, like upstream does for
-//     things like "Language" → "English"
+// v0.15: minimal — just a right-aligned secondary value text,
+// rendered inside <ListItem rightElement={...}>.
 //
 // Green zone: new file, no upstream code touched.
-
-.eink-panel-selector {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex: 1 1 auto;
-  min-width: 0;
-  cursor: pointer;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-}
 
 .eink-panel-selector__value {
   font-size: 0.9375rem;
   color: var(--color-text-secondary, #707579);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .eink-panel-selector__auto-tag {
