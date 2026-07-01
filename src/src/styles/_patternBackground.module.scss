@@ -57,4 +57,13 @@
   &:not(.customBgImage):not(.customBgColor):not(:global(html.eink-mode) &)::after {
     @include mixins.chat-pattern-styles("../assets/pattern.svg");
   }
+
+  // Einkgram v0.13: Hide ALL background images (both default
+  // chat-bg-br.png AND user-uploaded custom backgrounds) in
+  // E-Ink mode. E-Ink panels render color photos as muddy
+  // gradients — solid paper-white is the correct E-Ink UX.
+  // Source-level gate, no DOM scanning.
+  :global(html.eink-mode) &::before {
+    display: none !important;
+  }
 }

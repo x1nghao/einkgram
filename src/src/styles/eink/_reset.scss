@@ -86,3 +86,15 @@ html.eink-mode .ListItem {
 html.eink-mode {
   scroll-behavior: auto !important;
 }
+
+// ════════════════════════════════════════════════════════
+// 6. Suppress user-uploaded custom chat backgrounds.
+//    Telegram allows users to set custom wallpapers via
+//    style="--custom-background: url(...)". E-Ink panels render
+//    these as muddy gradients — solid paper-white is the
+//    correct E-Ink UX. Attribute selector targets the inline
+//    style (never CSS-Module-hashed), surviving any build.
+// ════════════════════════════════════════════════════════
+html.eink-mode [style*="--custom-background"]::before {
+  display: none !important;
+}
