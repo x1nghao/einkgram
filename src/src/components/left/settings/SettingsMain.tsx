@@ -124,10 +124,10 @@ const SettingsMain: FC<OwnProps & StateProps> = ({
           >
             {lang('MenuAnimations')}
           </ListItem>
-          <ListItem narrow nonInteractive>
+          <ListItem narrow>
             <EinkToggle />
           </ListItem>
-          <ListItem narrow nonInteractive>
+          <ListItem narrow>
             <PanelSelector />
           </ListItem>
           <ListItem

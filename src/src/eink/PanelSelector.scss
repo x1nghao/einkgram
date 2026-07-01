@@ -1,71 +1,42 @@
-// Einkgram — PanelSelector styles (v0.5.3)
+// Einkgram — PanelSelector styles (v0.14)
 //
-// Mirrors the .eink-toggle styling so the two look like a
-// matched pair in Settings. Pure B/W, no shadows, no
-// transitions (E-Ink friendly).
+// v0.14: stripped to match upstream ListItem visual language.
+//   - No more <select> dropdown
+//   - No more 2px border around the row
+//   - Just a right-aligned value text, like upstream does for
+//     things like "Language" → "English"
+//
+// Green zone: new file, no upstream code touched.
 
 .eink-panel-selector {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 0;
-  font-family: var(--font-family, sans-serif);
-  color: var(--color-text, #000);
-}
-
-.eink-panel-selector__label {
-  font-weight: var(--font-weight-medium, 500);
-  font-size: 0.9375rem;
-  flex: 0 0 auto;
-}
-
-.eink-panel-selector__select {
+  justify-content: flex-end;
   flex: 1 1 auto;
-  appearance: none;
-  -webkit-appearance: none;
-  padding: 0.5rem 2rem 0.5rem 0.75rem;
-  font-size: 0.9375rem;
-  font-family: inherit;
-  color: inherit;
-  background-color: var(--color-background, #fff);
-  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
-    linear-gradient(135deg, currentColor 50%, transparent 50%);
-  background-position: calc(100% - 1.125rem) center, calc(100% - 0.625rem) center;
-  background-size: 0.5rem 0.5rem;
-  background-repeat: no-repeat;
-  border: 2px solid currentColor;
-  border-radius: 0;
+  min-width: 0;
   cursor: pointer;
-
-  // Disable animation, keep things sharp
-  transition: none !important;
-  animation: none !important;
-
-  &:focus,
-  &:focus-visible {
-    outline: 3px solid currentColor;
-    outline-offset: 2px;
-  }
-
-  // The dropdown options themselves
-  option {
-    color: var(--color-text, #000);
-    background-color: var(--color-background, #fff);
-  }
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-// v0.5.5: caption shown when in 'auto' mode, displaying
-// the panel the detector chose. Pure B/W, no transition.
-.eink-panel-selector__detected {
-  flex: 0 0 auto;
-  font-size: 0.8125rem;
-  color: #808080;
-  font-style: italic;
+.eink-panel-selector__value {
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary, #707579);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.eink-panel-selector__detected strong {
-  font-style: normal;
-  font-weight: var(--font-weight-medium, 500);
-  color: var(--eink-fg, #000);
+.eink-panel-selector__auto-tag {
+  display: inline-block;
+  margin-right: 0.375rem;
+  padding: 0 0.375rem;
+  font-size: 0.6875rem;
+  line-height: 1.25;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  color: var(--color-text-secondary, #707579);
+  border: 1px solid var(--color-borders, #dadce0);
+  border-radius: 0.25rem;
+  vertical-align: middle;
 }
