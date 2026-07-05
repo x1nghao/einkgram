@@ -1,18 +1,14 @@
-// Einkgram — Bootstrap entry point (v0.11)
+// Einkgram — Bootstrap entry point (v0.16)
 //
-// v0.11: Stripped overlay layer. Removed:
-//   - forceLightTheme.ts — upstream's theme-light mode is fine;
-//     we just block dark-mode-via-media in index.html
-//   - patternSuppress.ts — _patternBackground.module.scss now
-//     has the eink-mode gate *in the source*
-//   - mode.ts / modeApply.ts → consolidated into useEinkMode.ts
+// v0.16: Simplified from 4-mode to ON/OFF toggle. Removed:
+//   - Image processor (JS dithering) — driver layer handles it
+//   - Panel selector — no panel types needed
+//   - Ramp cache — no grayscale mapping
 //
 // What stays:
-//   - Mode init (standard/1bit/paper from localStorage)
-//   - Ctrl+Shift+E shortcut
+//   - E-Ink mode ON/OFF toggle (Ctrl+Shift+E)
 //   - PWA manifest
 //   - Page scroll buttons
-//   - Image processor
 //   - Loading screen removal
 //   - Dev API (window.__eink)
 
@@ -20,12 +16,9 @@ import { useEinkMode } from './useEinkMode';
 import { registerShortcut, type ShortcutApi } from './init/shortcut';
 import { installPwaManifest } from './init/pwa';
 import { mountPageScrollButtons } from './init/scrollButtons';
-import { installImageProcessor } from './init/imageProcessor';
 import { hideEinkLoader } from './init/hideLoader';
 import { applyInitialMode } from './init/mode';
-
 import type { EinkMode } from './init/mode';
-import type { PanelType } from './panels';
 
 // Expose dev API. Single source of truth for window.__eink.
 function exposeDevApi(shortcutApi: ShortcutApi) {
@@ -68,15 +61,8 @@ if (document.readyState === 'loading') {
   window.addEventListener('load', () => void mountPageScrollButtons());
 }
 
-// 8. Image processor — last, depends on panel CSS vars.
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', installImageProcessor);
-} else {
-  installImageProcessor();
-}
-
-// 9. Type-only re-exports.
-export type { EinkMode, PanelType };
+// Type-only re-exports.
+export type { EinkMode };
 
 // Helper: hides the static loading screen from index.html.
 function scheduleHideLoader() {

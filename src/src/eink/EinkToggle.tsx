@@ -1,8 +1,7 @@
-// Einkgram — UI toggle for E-Ink mode (v0.15)
+// Einkgram — UI toggle for E-Ink mode (v0.16)
 //
-// v0.15: pure presentational component, no onClick / no role.
-//   - Just renders a right-aligned secondary-color value text.
-//   - Parent ListItem handles click-to-cycle (calls useEinkMode().cycle).
+// v0.16: Simplified to ON/OFF toggle. Pure presentational
+// component rendered inside <ListItem rightElement={...}>.
 //
 // Green zone: new file, no upstream code touched.
 
@@ -13,7 +12,7 @@ import './EinkToggle.scss';
 export const EinkToggle = () => {
   const { mode } = useEinkMode();
   return (
-    <span className="eink-toggle__value">{EINK_MODE_LABELS[mode] ?? 'Standard'}</span>
+    <span className="eink-toggle__value">{EINK_MODE_LABELS[mode] ?? 'On'}</span>
   );
 };
 

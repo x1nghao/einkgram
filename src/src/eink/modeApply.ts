@@ -1,21 +1,14 @@
-// Einkgram — Mode application utilities (v0.8)
+// Einkgram — Mode application utilities (v0.16)
 //
-// Before v0.8, the DOM-and-localStorage logic for the E-Ink mode
-// was duplicated in three places:
-//   - init/mode.ts (applyInitialMode)
-//   - useEinkMode.ts (applyModeToDom, readStoredMode)
-//   - init/shortcut.ts (currentFromDom, setMode)
-//
-// This file consolidates them into a single set of pure functions.
-// Each function is small and side-effect-isolated; tests can call
-// them directly without mocking React or the init lifecycle.
+// v0.16: Simplified from 4-mode (off/standard/1bit/paper) to a
+// single ON/OFF toggle. No CSS classes per mode; just toggles
+// the eink-mode class on <html>. JS dithering removed — the
+// E-Ink device driver handles grayscale mapping.
 //
 // Green zone: pure utilities, no upstream code touched.
 
 import {
-  CLASS_1BIT,
   CLASS_EINK,
-  CLASS_PAPER,
   DEFAULT_EINK_MODE,
   EINK_MODE_CYCLE_ORDER,
   EINK_MODE_STORAGE_KEY,
@@ -23,26 +16,20 @@ import {
 } from './constants';
 
 export {
-  CLASS_1BIT,
   CLASS_EINK,
-  CLASS_PAPER,
   DEFAULT_EINK_MODE,
   EINK_MODE_CYCLE_ORDER,
   EINK_MODE_STORAGE_KEY,
-  EINK_MODES,
   EINK_MODE_LABELS,
   type EinkMode,
 } from './constants';
 
 /** Type guard: is `v` a valid EinkMode string? */
 export function isEinkMode(v: unknown): v is EinkMode {
-  return v === 'off' || v === 'standard' || v === '1bit' || v === 'paper';
+  return v === 'off' || v === 'on';
 }
 
-/** Read the user's stored preference, with a fallback to
- *  DEFAULT_EINK_MODE. Returns the default if storage is
- *  unavailable (private browsing, quota errors) or the
- *  stored value is invalid. */
+/** Read the user's stored preference, falling back to DEFAULT_EINK_MODE. */
 export function readStoredMode(): EinkMode {
   if (typeof localStorage === 'undefined') return DEFAULT_EINK_MODE;
   try {
@@ -60,30 +47,20 @@ export function writeStoredMode(mode: EinkMode): void {
   try {
     localStorage.setItem(EINK_MODE_STORAGE_KEY, mode);
   } catch {
-    // ignore quota / privacy mode errors
+    // ignore
   }
 }
 
-/** Apply the mode to <html> as a class. Idempotent: calling
- *  applyModeToDom('standard') twice is the same as once. */
+/** Apply the mode to <html>: add/remove the eink-mode class. */
 export function applyModeToDom(mode: EinkMode): void {
   if (typeof document === 'undefined') return;
-  const html = document.documentElement;
-  html.classList.toggle(CLASS_EINK, mode !== 'off');
-  html.classList.toggle(CLASS_1BIT, mode === '1bit');
-  html.classList.toggle(CLASS_PAPER, mode === 'paper');
+  document.documentElement.classList.toggle(CLASS_EINK, mode === 'on');
 }
 
-/** Read the current mode by inspecting the classes on <html>.
- *  Used by the keyboard shortcut to determine "where we are
- *  in the cycle". Inverse of applyModeToDom. */
+/** Read the current mode from <html> classes. */
 export function readModeFromDom(): EinkMode {
   if (typeof document === 'undefined') return DEFAULT_EINK_MODE;
-  const html = document.documentElement;
-  if (html.classList.contains(CLASS_1BIT)) return '1bit';
-  if (html.classList.contains(CLASS_PAPER)) return 'paper';
-  if (html.classList.contains(CLASS_EINK)) return 'standard';
-  return 'off';
+  return document.documentElement.classList.contains(CLASS_EINK) ? 'on' : 'off';
 }
 
 /** Cycle to the next mode in EINK_MODE_CYCLE_ORDER. Wraps. */

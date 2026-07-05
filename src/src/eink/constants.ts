@@ -1,49 +1,36 @@
-// Einkgram — Shared constants and types (v0.8)
+// Einkgram — Shared constants and types (v0.16)
 //
-// Before v0.8, the same constants (CLASS_EINK, STORAGE_KEY, etc.)
-// and types (EinkMode) were duplicated in 3 files. This file is
-// the single source of truth.
+// v0.16: Simplified from 4-mode (off/standard/1bit/paper) to a
+// single ON/OFF toggle. CSS filters and JS dithering are removed
+// — the E-Ink device driver handles grayscale mapping. What we
+// keep: animation suppression, high-contrast focus ring, visual
+// noise removal (wallpapers, patterns).
 //
 // Green zone: pure type/value exports, no upstream code touched.
 
 /**
- * E-Ink display mode.
- *   'off'       — no E-Ink filter, default Telegram look
- *   'standard'  — 16-level grayscale + slight contrast (most E-Ink)
- *   '1bit'      — pure black/white (Kindle, Boox Go 7, etc)
- *   'paper'     — warm paper look (slight sepia)
+ * E-Ink mode: enabled or disabled.
+ * When enabled, styles in _reset.scss suppress animations,
+ * transitions, custom backgrounds, and smooth scroll — all of
+ * which cause ghosting / performance issues on E-Ink panels.
+ * No CSS filter or JS dithering is applied; the device driver
+ * handles all grayscale/palette conversion.
  */
-export type EinkMode = 'off' | 'standard' | '1bit' | 'paper';
+export type EinkMode = 'off' | 'on';
 
-export const EINK_MODES: readonly EinkMode[] = ['off', 'standard', '1bit', 'paper'] as const;
-
-/** Default mode when no preference is stored. */
-export const DEFAULT_EINK_MODE: EinkMode = 'standard';
-
-/** Cycle order used by the Ctrl+Shift+E shortcut and the
- *  toggle button. Starts at 'standard' so a fresh user
- *  pressing the shortcut for the first time gets the
- *  standard E-Ink experience, not 'off'. */
-export const EINK_MODE_CYCLE_ORDER: readonly EinkMode[] = [
-  'standard',
-  '1bit',
-  'paper',
-  'off',
-] as const;
+export const DEFAULT_EINK_MODE: EinkMode = 'on';
 
 /** localStorage key for the user's E-Ink mode preference. */
 export const EINK_MODE_STORAGE_KEY = 'eink-mode';
 
-/** HTML class names applied to <html> by `modeApply.ts`. */
+/** HTML class name applied to <html> by modeApply.ts. */
 export const CLASS_EINK = 'eink-mode';
-export const CLASS_1BIT = 'eink-1bit';
-export const CLASS_PAPER = 'eink-paper';
 
-/** Human-readable labels for UI surfaces (toggle button,
- *  ARIA labels, banner, etc.). */
+/** Human-readable labels for UI surfaces. */
 export const EINK_MODE_LABELS: Record<EinkMode, string> = {
   off: 'Off',
-  standard: '16-Gray',
-  '1bit': '1-Bit',
-  paper: 'Paper',
+  on: 'On',
 };
+
+/** Cycle order used by the Ctrl+Shift+E shortcut. */
+export const EINK_MODE_CYCLE_ORDER: readonly EinkMode[] = ['off', 'on'] as const;

@@ -1,8 +1,6 @@
-// Einkgram — Keyboard shortcut for E-Ink mode cycling (v0.8)
+// Einkgram — Keyboard shortcut for E-Ink mode cycling (v0.16)
 //
-// v0.8 cleanup: this file used to define its own mode constants
-// and re-implement currentFromDom / setMode. Now it just wires
-// up the global keydown listener and delegates to ./modeApply.
+// Ctrl+Shift+E toggles E-Ink mode on/off.
 //
 // Green zone: no upstream code touched.
 
