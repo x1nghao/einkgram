@@ -619,6 +619,7 @@ const Main = ({
       <div
         className={bgClassName}
         style={customBackgroundValue ? `--custom-background: ${customBackgroundValue}` : undefined}
+        data-eink-role="wallpaper"
       />
       {IS_TAURI && IS_MAC_OS && (
         <div className="tauri-drag-region" data-tauri-drag-region />

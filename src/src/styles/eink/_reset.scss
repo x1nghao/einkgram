@@ -103,12 +103,11 @@ html.eink-mode [style*="--custom-background"]::before {
 // 7. Suppress the default chat wallpaper (v0.14).
 //    chat-bg-br.png is a 50x50 yellow-green tile (Telegram's
 //    "default" light-theme wallpaper). Plus a ::before SVG
-//    pattern overlay. Both are visual noise on E-Ink. We can't
-//    target by class (CSS Module hashes .Y7owXZmb) and the
-//    nested :global() pattern gets tree-shaken in production,
-//    so we use the stable #Main id + positional selector. The
-//    bg div is always the first child of #Main per Main.tsx.
+//    pattern overlay. Both are visual noise on E-Ink. We use
+//    a data attribute (set in Main.tsx) instead of a positional
+//    selector — it survives CSS Module hashing and doesn't
+//    break when upstream reorders children.
 // ════════════════════════════════════════════════════════
-html.eink-mode #Main > div:first-child {
+html.eink-mode [data-eink-role="wallpaper"] {
   display: none !important;
 }
