@@ -38,11 +38,14 @@ const STATIC_COPY_TARGETS: Target[] = [
     dest: '.',
     rename: { stripBase: 2 },
   },
-  {
-    src: normalizePath(resolve(DIR_NAME, 'node_modules/emoji-data-ios/img-apple-160/**/*')),
-    dest: '.',
-    rename: { stripBase: 2 },
-  },
+  // Einkgram: img-apple-160 (63 MB, 5813 files) removed.
+  // E-Ink screens are ~200 PPI — 64px emoji are sufficient
+  // and ship at 36 MB. Uncomment to restore for non-E-Ink users.
+  // {
+  //   src: normalizePath(resolve(DIR_NAME, 'node_modules/emoji-data-ios/img-apple-160/**/*')),
+  //   dest: '.',
+  //   rename: { stripBase: 2 },
+  // },
 ];
 
 type BundleReportPlugin = {
@@ -217,7 +220,9 @@ export default defineConfig(({ mode }): UserConfig => {
       },
     },
     build: {
-      sourcemap: true,
+      // Einkgram: sourcemaps are only useful for debugging.
+      // Production builds ship without them (saves ~18 MB).
+      sourcemap: !isProductionApp,
       assetsInlineLimit: (filePath) => (IMAGE_ASSET_RE.test(filePath) ? false : undefined),
       rolldownOptions: {
         output: {

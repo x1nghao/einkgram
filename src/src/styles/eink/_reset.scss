@@ -1,44 +1,18 @@
-// Einkgram — E-Ink rendering reset (v0.12)
+// Einkgram — E-Ink rendering reset (v0.17)
 //
-// v0.12 fixes from code audit:
-//   - Removed image-rendering:pixelated — breaks photos.
-//   - Removed .chat-item/.message-list-item — guessed selectors.
-//     .ListItem is the real upstream class (ListItem.scss, plain class).
-//   - Removed font-smooth:never — non-standard, ignored by all engines.
-//   - Narrowed caret-color from universal * to editable elements only.
-//   - No font-family override — E-Ink panels at ≥227ppi render system
-//     fonts well; the upstream Roboto/system-ui stack is correct.
+// v0.17: Simplified — let the device driver handle what it can.
+//   Removed font-smoothing override (driver-level).
+//   Removed animation/transition killing (driver handles refresh;
+//    if the device has a fast refresh mode, animations are fine).
+//   Removed scroll-behavior override (same reasoning).
+//   Kept focus ring, selection, caret (our design choice).
+//   Kept repaint containment (performance, not driver-level).
+//   Kept background suppression (visual noise removal).
 //
 // Green zone: safe to modify freely.
 
 // ════════════════════════════════════════════════════════
-// 1. Font smoothing off — E-Ink panels do their own AA.
-//    Subpixel AA from browsers leaves ghost residue.
-// ════════════════════════════════════════════════════════
-html.eink-mode,
-html.eink-mode body,
-html.eink-mode * {
-  -webkit-font-smoothing: none;
-  -moz-osx-font-smoothing: auto;
-  text-rendering: geometricPrecision;
-}
-
-// ════════════════════════════════════════════════════════
-// 2. Kill animations & transitions — ghosting on partial
-//    refresh.
-// ════════════════════════════════════════════════════════
-html.eink-mode,
-html.eink-mode *,
-html.eink-mode *::before,
-html.eink-mode *::after {
-  animation-duration: 0s !important;
-  animation-delay: 0s !important;
-  transition-duration: 0s !important;
-  transition-delay: 0s !important;
-}
-
-// ════════════════════════════════════════════════════════
-// 3. High-contrast focus ring — E-Ink smears anything with
+// 1. High-contrast focus ring — E-Ink smears anything with
 //    blur. Solid 3px ring survives partial refresh.
 // ════════════════════════════════════════════════════════
 html.eink-mode :focus,
@@ -46,7 +20,6 @@ html.eink-mode :focus-visible {
   outline: 3px solid var(--eink-fg, #000) !important;
   outline-offset: 2px !important;
   box-shadow: none !important;
-  transition: none !important;
 }
 
 html.eink-mode input:focus,
@@ -61,8 +34,6 @@ html.eink-mode ::selection {
   color: var(--eink-bg, #fff) !important;
 }
 
-// v0.12: narrowed from universal * to only elements that can
-// actually receive a caret.
 html.eink-mode :is(input, textarea, [contenteditable]),
 html.eink-mode :is(input, textarea, [contenteditable])::before,
 html.eink-mode :is(input, textarea, [contenteditable])::after {
@@ -70,9 +41,9 @@ html.eink-mode :is(input, textarea, [contenteditable])::after {
 }
 
 // ════════════════════════════════════════════════════════
-// 4. Repaint containment for list items.
-//    .ListItem is a real upstream plain class
-//    (src/components/ui/ListItem.scss → .ListItem { ... }).
+// 2. Repaint containment for list items — reduces ghosting
+//    by limiting the repaint area. This is a performance
+//    hint the driver cannot infer on its own.
 // ════════════════════════════════════════════════════════
 html.eink-mode .ListItem {
   contain: layout style paint;
@@ -81,32 +52,14 @@ html.eink-mode .ListItem {
 }
 
 // ════════════════════════════════════════════════════════
-// 5. No smooth scroll — each frame is a full E-Ink repaint.
-// ════════════════════════════════════════════════════════
-html.eink-mode {
-  scroll-behavior: auto !important;
-}
-
-// ════════════════════════════════════════════════════════
-// 6. Suppress user-uploaded custom chat backgrounds.
-//    Telegram allows users to set custom wallpapers via
-//    style="--custom-background: url(...)". E-Ink panels render
-//    these as muddy gradients — solid paper-white is the
-//    correct E-Ink UX. Attribute selector targets the inline
-//    style (never CSS-Module-hashed), surviving any build.
+// 3. Suppress user-uploaded custom chat backgrounds.
 // ════════════════════════════════════════════════════════
 html.eink-mode [style*="--custom-background"]::before {
   display: none !important;
 }
 
 // ════════════════════════════════════════════════════════
-// 7. Suppress the default chat wallpaper (v0.14).
-//    chat-bg-br.png is a 50x50 yellow-green tile (Telegram's
-//    "default" light-theme wallpaper). Plus a ::before SVG
-//    pattern overlay. Both are visual noise on E-Ink. We use
-//    a data attribute (set in Main.tsx) instead of a positional
-//    selector — it survives CSS Module hashing and doesn't
-//    break when upstream reorders children.
+// 4. Suppress the default chat wallpaper.
 // ════════════════════════════════════════════════════════
 html.eink-mode [data-eink-role="wallpaper"] {
   display: none !important;
