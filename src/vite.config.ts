@@ -20,11 +20,16 @@ const DEFAULT_BUNDLE_STATS_BASELINE_FILE = 'baseline.json';
 const BUNDLE_STATS_VISUALIZER_FILE = 'visualizer.html';
 const WORKER_BUNDLE_COLLECTOR_PLUGIN_NAME = 'telegram:collect-worker-report-bundle';
 const BUNDLE_REPORT_PLUGIN_SUFFIX = ':with-workers';
-const DEV_WARMUP_CLIENT_FILES = [
-  'index.html',
-  'src/**/*.{js,jsx,ts,tsx,css,scss}',
-  '!src/**/*.d.ts',
-  '!src/lib/gramjs/tl/**',
+const DEV_SERVER_WATCH_IGNORES = [
+  '**/dist/**',
+  '**/tauri/target/**',
+];
+const DEV_BUNDLE_WARMUP_CLIENT_FILES = [
+  'src/bundles/auth.ts',
+  'src/bundles/main.ts',
+  'src/bundles/extra.ts',
+  'src/bundles/calls.ts',
+  'src/bundles/stars.ts',
 ];
 const IMAGE_ASSET_RE = /\.(?:avif|gif|jpe?g|png|svg|webp)$/i;
 const STATIC_COPY_TARGETS: Target[] = [
@@ -38,9 +43,7 @@ const STATIC_COPY_TARGETS: Target[] = [
     dest: '.',
     rename: { stripBase: 2 },
   },
-  // Einkgram: img-apple-160 (63 MB, 5813 files) removed.
-  // E-Ink screens are ~200 PPI — 64px emoji are sufficient
-  // and ship at 36 MB. Uncomment to restore for non-E-Ink users.
+  // Einkgram: img-apple-160 removed (63MB saved), 64px is sufficient
   // {
   //   src: normalizePath(resolve(DIR_NAME, 'node_modules/emoji-data-ios/img-apple-160/**/*')),
   //   dest: '.',
@@ -80,13 +83,7 @@ export default defineConfig(({ mode }): UserConfig => {
   const isProductionApp = appEnv === 'production';
   const appleIcon = isProductionApp ? 'apple-touch-icon' : 'apple-touch-icon-dev';
   const mainIcon = isProductionApp ? 'icon-192x192' : 'icon-dev-192x192';
-  // Einkgram: use einkgram.webmanifest in production so the
-  // PWA install banner and app icon show "Einkgram" (not
-  // "Telegram Web"). The manifest file already exists at
-  // public/einkgram.webmanifest (added in v0.5.5) and was
-  // just never wired up here. Dev mode keeps site_dev.webmanifest
-  // for upstream-compat.
-  const manifest = isProductionApp ? 'einkgram.webmanifest' : 'site_dev.webmanifest';
+  const manifest = isProductionApp ? 'site.webmanifest' : 'site_dev.webmanifest';
   const csp = buildCsp(appEnv);
   const isDevelopmentMode = mode === 'development';
   const telegramApiId = env.TELEGRAM_API_ID || '';
@@ -216,13 +213,14 @@ export default defineConfig(({ mode }): UserConfig => {
       },
       https: getHttpsConfig(httpsCertPath, httpsKeyPath),
       warmup: {
-        clientFiles: isDevelopmentMode ? DEV_WARMUP_CLIENT_FILES : [],
+        clientFiles: DEV_BUNDLE_WARMUP_CLIENT_FILES,
+      },
+      watch: {
+        ignored: DEV_SERVER_WATCH_IGNORES,
       },
     },
     build: {
-      // Einkgram: sourcemaps are only useful for debugging.
-      // Production builds ship without them (saves ~18 MB).
-      sourcemap: !isProductionApp,
+      sourcemap: !isProductionApp, // Einkgram: off in production (saves 18MB)
       assetsInlineLimit: (filePath) => (IMAGE_ASSET_RE.test(filePath) ? false : undefined),
       rolldownOptions: {
         output: {
@@ -292,7 +290,9 @@ function buildCsp(appEnv: string) {
   return `
   default-src 'self';
   connect-src 'self' wss://*.web.telegram.org blob: http: https: ${appEnv === 'development' ? 'wss: ipc:' : ''};
-  script-src 'self' 'wasm-unsafe-eval' https://t.me/_websync_ https://telegram.me/_websync_;
+  script-src 'self' 'wasm-unsafe-eval'
+    https://t.me/_websync_ https://telegram.me/_websync_ https://telegram.dog/_websync_;
+  worker-src 'self'${appEnv === 'development' ? ' blob:' : ''};
   style-src 'self' 'unsafe-inline';
   font-src 'self' data:;
   img-src 'self' data: blob: https://ss3.4sqi.net/img/categories_v2/;

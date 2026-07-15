@@ -102,7 +102,7 @@ import type {
   TabThread,
   ThreadId,
 } from '../../types';
-import type { WebApp, WebAppModalStateType } from '../../types/webapp';
+import type { BrowserState } from '../../types/browser';
 import type { SearchResultKey } from '../../util/keys/searchResultKey';
 import type { RegularLangFnParameters } from '../../util/localization';
 import type { ProfileCollectionKey } from '../selectors/payments';
@@ -410,9 +410,6 @@ export type TabState = {
   };
 
   webPagePreviewId?: string;
-  instantViewModal?: {
-    webPageId: string;
-  };
 
   loadingThread?: {
     loadingChatId: string;
@@ -611,15 +608,7 @@ export type TabState = {
     };
   };
 
-  webApps: {
-    activeWebAppKey?: string;
-    openedOrderedKeys: string[];
-    sessionKeys: string[];
-    openedWebApps: Record<string, WebApp>;
-    modalState: WebAppModalStateType;
-    isModalOpen: boolean;
-    isMoreAppsTabActive: boolean;
-  };
+  browser: BrowserState;
 
   botTrustRequest?: {
     botId: string;
@@ -634,6 +623,10 @@ export type TabState = {
   requestedAttachBotInChat?: {
     bot: ApiAttachBot;
     filter: ApiChatType[];
+    startParam?: string;
+  };
+  requestedBotStartGroup?: {
+    bot: ApiUser;
     startParam?: string;
   };
 
@@ -745,7 +738,7 @@ export type TabState = {
     reactionContext?: ReactionDeletionContext;
   };
 
-  isWebAppsCloseConfirmationModalOpen?: boolean;
+  isBrowserCloseConfirmationModalOpen?: boolean;
 
   isGiftRecipientPickerOpen?: boolean;
 
@@ -892,6 +885,10 @@ export type TabState = {
     peerId: string;
     type: 'phone' | 'username';
     collectible: string;
+  };
+
+  qrCodeModal?: {
+    peerId: string;
   };
 
   starsBalanceModal?: {

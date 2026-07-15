@@ -8,6 +8,7 @@ import type {
   ApiInputStoryReplyInfo,
   ApiInputSuggestedPostInfo,
   ApiMessage,
+  ApiMessageReadMetric,
   ApiOnProgress,
   ApiStory,
   ApiUser,
@@ -906,7 +907,7 @@ addActionHandler('updateDraftSuggestedPostInfo', (global, actions, payload): Act
   const updatedSuggestedPostInfo = {
     ...currentDraft?.suggestedPostInfo,
     ...update,
-  } as ApiInputSuggestedPostInfo;
+  } satisfies ApiInputSuggestedPostInfo;
 
   const newDraft: ApiDraft = {
     ...currentDraft,
@@ -1035,12 +1036,16 @@ async function saveDraft<T extends GlobalState>({
     draft: newDraft,
   });
 
-  if (result && newDraft) {
-    newDraft.isLocal = false;
-  }
+  if (!result || !newDraft) return;
 
   global = getGlobal();
-  global = replaceThreadLocalStateParam(global, chatId, threadId, 'draft', newDraft);
+  if (selectDraft(global, chatId, threadId) !== newDraft) return;
+
+  const savedDraft: ApiDraft = {
+    ...newDraft,
+    isLocal: false,
+  };
+  global = replaceThreadLocalStateParam(global, chatId, threadId, 'draft', savedDraft);
 
   setGlobal(global);
 }
@@ -2581,7 +2586,7 @@ addActionHandler('openUrl', async (global, actions, payload): Promise<void> => {
   if (tryInstant) {
     const localWebPage = previewId ? selectWebPage(global, previewId) : undefined;
     if (localWebPage?.webpageType === 'full' && localWebPage.cachedPage) {
-      actions.openInstantView({ webPageId: localWebPage.id, tabId });
+      actions.openBrowserTab({ tab: { type: 'instantView', webPageId: localWebPage.id }, tabId });
       return;
     }
 
@@ -2594,13 +2599,17 @@ addActionHandler('openUrl', async (global, actions, payload): Promise<void> => {
     }
 
     if (webPage?.webpageType === 'full' && webPage.cachedPage) {
-      actions.openInstantView({ webPageId: webPage.id, tabId });
+      actions.openBrowserTab({ tab: { type: 'instantView', webPageId: webPage.id }, tabId });
       return;
     }
   }
 
   const { appConfig, config } = global;
-  if (config?.autologinToken && appConfig.autologinDomains.includes(parsedUrl.hostname)) {
+  if (
+    parsedUrl.protocol === 'https:'
+    && config?.autologinToken
+    && appConfig.autologinDomains.includes(parsedUrl.hostname)
+  ) {
     parsedUrl.searchParams.set(AUTOLOGIN_TOKEN_KEY, config.autologinToken);
     window.open(parsedUrl.href, '_blank', 'noopener');
     return;
@@ -3122,6 +3131,50 @@ addActionHandler('loadMessageViews', async (global, actions, payload): Promise<v
   });
 
   setGlobal(global);
+});
+
+const SEND_READ_METRICS_TIMEOUT = 1000;
+let readMetricsReportTimeout: number | undefined;
+let readMetricsToReport: Record<string, ApiMessageReadMetric[]> = {};
+
+function reportMessageReadMetrics() {
+  if (readMetricsReportTimeout) {
+    clearTimeout(readMetricsReportTimeout);
+    readMetricsReportTimeout = undefined;
+  }
+
+  const currentReadMetricsToReport = readMetricsToReport;
+  readMetricsToReport = {};
+
+  const global = getGlobal();
+  if (selectIsCurrentUserFrozen(global)) return;
+
+  Object.entries(currentReadMetricsToReport).forEach(([chatId, metrics]) => {
+    if (!metrics.length) return;
+
+    const chat = selectChat(global, chatId);
+    if (!chat) return;
+
+    void callApi('reportMessageReadMetrics', { chat, metrics });
+  });
+}
+
+addActionHandler('scheduleMessageReadMetricsReport', (global, actions, payload): ActionReturnType => {
+  const { chatId, metrics } = payload;
+
+  if (!metrics.length) return undefined;
+
+  if (!readMetricsReportTimeout) {
+    readMetricsReportTimeout = window.setTimeout(reportMessageReadMetrics, SEND_READ_METRICS_TIMEOUT);
+  }
+
+  if (!readMetricsToReport[chatId]) {
+    readMetricsToReport[chatId] = [];
+  }
+
+  readMetricsToReport[chatId].push(...metrics);
+
+  return undefined;
 });
 
 addActionHandler('loadFactChecks', async (global, actions, payload): Promise<void> => {

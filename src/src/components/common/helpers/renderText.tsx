@@ -120,8 +120,7 @@ function replaceEmojis(
       if (!code) {
         emojiResult.push(postProcess(emoji));
       } else {
-        // Einkgram: always use 64px emoji (160px dir removed from dist)
-        const src = `./img-apple-64/${code}.png`;
+        const src = `./img-apple-64/${code}.png`; // Einkgram: always 64px (160px emoji removed, saves 63MB)
         const className = buildClassName(
           'emoji',
           size === 'small' && 'emoji-small',

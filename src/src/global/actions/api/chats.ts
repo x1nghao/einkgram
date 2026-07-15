@@ -1,6 +1,6 @@
 import type {
   ApiChat, ApiChatFolder, ApiChatlistExportedInvite,
-  ApiChatMember, ApiError, ApiMissingInvitedUser,
+  ApiChatMember, ApiDraft, ApiError, ApiMissingInvitedUser,
   ApiTopic,
   LinkContext,
 } from '../../../api/types';
@@ -573,15 +573,6 @@ addActionHandler('loadAllChats', async (global, actions, payload): Promise<void>
       }
     }
 
-    if (result?.threadInfos) {
-      result.threadInfos.forEach((threadInfo) => {
-        global = updateThreadInfo(global, threadInfo);
-      });
-    }
-
-    if (result?.threadReadStatesById) {
-      global = updateMainThreadReadStates(global, result.threadReadStatesById);
-    }
     setGlobal(global);
     global = getGlobal();
   }
@@ -883,6 +874,7 @@ addActionHandler('joinChannel', async (global, actions, payload): Promise<void> 
         queryId: result.queryId,
         peerId: chatId,
         isFullscreen: result.isFullscreen,
+        isSameOrigin: result.isSameOrigin,
         isBroadcast: isChatChannel(chat),
         tabId,
       });
@@ -1889,6 +1881,7 @@ addActionHandler('acceptChatInvite', async (global, actions, payload): Promise<v
       url: result.url,
       queryId: result.queryId,
       isFullscreen: result.isFullscreen,
+      isSameOrigin: result.isSameOrigin,
       isBroadcast,
       tabId,
     });
@@ -1910,7 +1903,7 @@ addActionHandler('acceptChatInvite', async (global, actions, payload): Promise<v
 
 addActionHandler('openChatByUsername', async (global, actions, payload): Promise<void> => {
   const {
-    username, messageId, commentId, startParam, startAttach, attach, threadId, originalParts,
+    username, messageId, commentId, startParam, startGroup, startAttach, attach, threadId, originalParts,
     startApp, shouldStartMainApp, mode, isDirect,
     text, onChatChanged, choose, ref, timestamp, linkContext,
     tabId = getCurrentTabId(),
@@ -1921,6 +1914,16 @@ addActionHandler('openChatByUsername', async (global, actions, payload): Promise
   const isWebApp = webAppName && !Number(webAppName) && !originalParts?.[2];
 
   if (!commentId) {
+    if (startGroup !== undefined) {
+      const botChat = await fetchChatByUsername(global, username);
+      global = getGlobal();
+      const bot = botChat && selectUser(global, botChat.id);
+      if (!bot || !isUserBot(bot)) return;
+
+      actions.requestBotStartGroup({ bot, startParam: startGroup, tabId });
+      return;
+    }
+
     if (startAttach === undefined && messageId && !startParam && !ref
       && chat?.usernames?.some((c) => c.username === username)) {
       actions.focusMessage({
@@ -3533,6 +3536,7 @@ async function loadChats(
   shouldIgnorePagination?: boolean,
 ) {
   let global = getGlobal();
+  const globalBeforeLoad = global;
   const lastLocalServiceMessageId = selectLastServiceNotification(global)?.id;
 
   const params = !shouldIgnorePagination ? selectChatListLoadingParameters(global, listType) : {};
@@ -3597,19 +3601,31 @@ async function loadChats(
     );
   }
 
+  if (isFullDraftSync) {
+    result.threadInfos.forEach((threadInfo) => {
+      global = updateThreadInfo(global, threadInfo);
+    });
+    if (result.threadReadStatesById) {
+      global = updateMainThreadReadStates(global, result.threadReadStatesById);
+    }
+  }
+
   if (listType === 'active' || listType === 'archived') {
     const idsToUpdateDraft = isFullDraftSync ? result.chatIds : Object.keys(result.draftsById);
+
     idsToUpdateDraft.forEach((chatId) => {
       const draft = result.draftsById[chatId];
       const thread = selectThread(global, chatId, MAIN_THREAD_ID);
+      if (!isFullDraftSync && !draft && !thread) return;
 
-      if (!draft && !thread) return;
+      const initialDraft = selectDraft(globalBeforeLoad, chatId, MAIN_THREAD_ID);
+      const currentDraft = selectDraft(global, chatId, MAIN_THREAD_ID);
+      const shouldKeepLocalDraft = currentDraft?.isLocal;
+      if (shouldKeepLocalDraft || shouldKeepCurrentDraft(currentDraft, initialDraft, draft)) return;
 
-      if (!selectDraft(global, chatId, MAIN_THREAD_ID)?.isLocal) {
-        global = replaceThreadLocalStateParam(
-          global, chatId, MAIN_THREAD_ID, 'draft', draft,
-        );
-      }
+      global = replaceThreadLocalStateParam(
+        global, chatId, MAIN_THREAD_ID, 'draft', draft,
+      );
     });
   }
 
@@ -3629,10 +3645,19 @@ async function loadChats(
   setGlobal(global);
 
   return {
-    threadInfos: result.threadInfos,
-    threadReadStatesById: result.threadReadStatesById,
     messages: result.messages,
   };
+}
+
+function shouldKeepCurrentDraft(
+  currentDraft: ApiDraft | undefined,
+  initialDraft: ApiDraft | undefined,
+  loadedDraft: ApiDraft | undefined,
+) {
+  if (currentDraft === initialDraft) return false;
+  if (!currentDraft || currentDraft.isLocal) return true;
+
+  return Boolean(currentDraft.date && (!loadedDraft?.date || currentDraft.date >= loadedDraft.date));
 }
 
 export async function loadFullChat<T extends GlobalState>(
@@ -3958,7 +3983,7 @@ async function openChatWithParams<T extends GlobalState>(
   }
 
   if (startParam && !referrer) {
-    actions.startBot({ botId: chat.id, param: startParam });
+    actions.startBot({ botId: chat.id, param: startParam, tabId });
   }
 
   if (attach) {

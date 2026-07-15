@@ -134,6 +134,7 @@ type StateProps = {
   botTrustRequest?: TabState['botTrustRequest'];
   botTrustRequestBot?: ApiUser;
   requestedAttachBotInChat?: TabState['requestedAttachBotInChat'];
+  requestedBotStartGroup?: TabState['requestedBotStartGroup'];
   requestedDraft?: TabState['requestedDraft'];
   limitReached?: ApiLimitTypeWithModal;
   deleteFolderDialog?: ApiChatFolder;
@@ -192,6 +193,7 @@ const Main = ({
   botTrustRequest,
   botTrustRequestBot,
   requestedAttachBotInChat,
+  requestedBotStartGroup,
   requestedDraft,
   isPremiumModalOpen,
   isGiveawayModalOpen,
@@ -284,7 +286,7 @@ const Main = ({
 
   if (DEBUG && !DEBUG_isLogged) {
     DEBUG_isLogged = true;
-    // eslint-disable-next-line no-console, @eslint-react/purity
+    // eslint-disable-next-line no-console
     console.log('>>> RENDER MAIN');
   }
 
@@ -665,7 +667,10 @@ const Main = ({
         type={botTrustRequest?.type}
         shouldRequestWriteAccess={botTrustRequest?.shouldRequestWriteAccess}
       />
-      <AttachBotRecipientPicker requestedAttachBotInChat={requestedAttachBotInChat} />
+      <AttachBotRecipientPicker
+        requestedAttachBotInChat={requestedAttachBotInChat}
+        requestedBotStartGroup={requestedBotStartGroup}
+      />
       <MessageListHistoryHandler />
       <PremiumMainModal isOpen={isPremiumModalOpen} />
       <GiveawayModal isOpen={isGiveawayModalOpen} />
@@ -689,6 +694,7 @@ export default memo(withGlobal<OwnProps>(
     const {
       botTrustRequest,
       requestedAttachBotInChat,
+      requestedBotStartGroup,
       requestedDraft,
       openedStickerSetShortName,
       openedCustomEmojiSetIds,
@@ -751,6 +757,7 @@ export default memo(withGlobal<OwnProps>(
       botTrustRequest,
       botTrustRequestBot: botTrustRequest && selectUser(global, botTrustRequest.botId),
       requestedAttachBotInChat,
+      requestedBotStartGroup,
       isCurrentUserPremium: selectIsCurrentUserPremium(global),
       isPremiumModalOpen: premiumModal?.isOpen,
       isGiveawayModalOpen: giveawayModal?.isOpen,

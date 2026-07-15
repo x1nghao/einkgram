@@ -19,12 +19,6 @@ import useHistoryBack from '../../../hooks/useHistoryBack';
 import useLang from '../../../hooks/useLang';
 import useLastCallback from '../../../hooks/useLastCallback';
 
-// Einkgram — E-Ink mode toggle (v0.4.1)
-// One import + one ListItem = minimal red-zone touch.
-import EinkToggle from '../../../eink/EinkToggle';
-// Einkgram — v0.16: E-Ink ON/OFF toggle in Settings.
-import { useEinkMode } from '../../../eink/useEinkMode';
-
 import GramIcon from '../../common/icons/GramIcon';
 import StarIcon from '../../common/icons/StarIcon';
 import ChatExtra from '../../common/profile/ChatExtra';
@@ -32,6 +26,8 @@ import ProfileInfo from '../../common/profile/ProfileInfo';
 import Island from '../../gili/layout/Island';
 import ConfirmDialog from '../../ui/ConfirmDialog';
 import ListItem from '../../ui/ListItem';
+
+import EinkToggle from '../../../eink/EinkToggle';
 
 import styles from './SettingsMain.module.scss';
 
@@ -72,8 +68,6 @@ const SettingsMain: FC<OwnProps & StateProps> = ({
   const [isSupportDialogOpen, openSupportDialog, closeSupportDialog] = useFlag(false);
 
   const lang = useLang();
-  // Einkgram — v0.16: E-Ink ON/OFF cycle.
-  const { cycle: cycleEinkMode } = useEinkMode();
 
   useEffect(() => {
     if (currentUserId) {
@@ -125,14 +119,7 @@ const SettingsMain: FC<OwnProps & StateProps> = ({
           >
             {lang('MenuAnimations')}
           </ListItem>
-          <ListItem
-            narrow
-            icon="brush"
-            onClick={cycleEinkMode}
-            rightElement={<EinkToggle />}
-          >
-            <span className="flex-grow">E-Ink mode</span>
-          </ListItem>
+          <EinkToggle />
           <ListItem
             icon="unmute"
             narrow
