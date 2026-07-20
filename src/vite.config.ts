@@ -83,7 +83,7 @@ export default defineConfig(({ mode }): UserConfig => {
   const isProductionApp = appEnv === 'production';
   const appleIcon = isProductionApp ? 'apple-touch-icon' : 'apple-touch-icon-dev';
   const mainIcon = isProductionApp ? 'icon-192x192' : 'icon-dev-192x192';
-  const manifest = isProductionApp ? 'site.webmanifest' : 'site_dev.webmanifest';
+  const manifest = isProductionApp ? 'einkgram.webmanifest' : 'site_dev.webmanifest'; // Einkgram: custom manifest
   const csp = buildCsp(appEnv);
   const isDevelopmentMode = mode === 'development';
   const telegramApiId = env.TELEGRAM_API_ID || '';
