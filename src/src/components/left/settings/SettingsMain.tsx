@@ -28,6 +28,7 @@ import ConfirmDialog from '../../ui/ConfirmDialog';
 import ListItem from '../../ui/ListItem';
 
 import EinkToggle from '../../../eink/EinkToggle';
+import FontWeightToggle from '../../../eink/FontWeightToggle';
 
 import styles from './SettingsMain.module.scss';
 
@@ -120,6 +121,7 @@ const SettingsMain: FC<OwnProps & StateProps> = ({
             {lang('MenuAnimations')}
           </ListItem>
           <EinkToggle />
+          <FontWeightToggle />
           <ListItem
             icon="unmute"
             narrow

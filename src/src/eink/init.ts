@@ -18,6 +18,7 @@ import { installPwaManifest } from './init/pwa';
 import { mountPageScrollButtons } from './init/scrollButtons';
 import { hideEinkLoader } from './init/hideLoader';
 import { applyInitialMode } from './init/mode';
+import { applyInitialFontWeight } from './fontWeight';
 import type { EinkMode } from './init/mode';
 
 // Expose dev API. Single source of truth for window.__eink.
@@ -32,6 +33,7 @@ function exposeDevApi(shortcutApi: ShortcutApi) {
 
 // 1. Apply stored E-Ink mode to <html> ASAP (before first paint).
 applyInitialMode();
+applyInitialFontWeight();
 
 // 2. Hide pre-React loading screen.
 scheduleHideLoader();

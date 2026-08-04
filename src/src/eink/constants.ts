@@ -34,3 +34,35 @@ export const EINK_MODE_LABELS: Record<EinkMode, string> = {
 
 /** Cycle order used by the Ctrl+Shift+E shortcut. */
 export const EINK_MODE_CYCLE_ORDER: readonly EinkMode[] = ['off', 'on'] as const;
+
+// ════════════════════════════════════════════════════════
+// Font weight — independent from ON/OFF toggle.
+// Applied via data-eink-font-weight on <html>, consumed by
+// _reset.scss. Three levels: normal (no-op), medium (500),
+// bold (600). Storage+DOM kept separate from modeApply.
+// ════════════════════════════════════════════════════════
+
+/** Font weight level for E-Ink readability. */
+export type FontWeightLevel = 'normal' | 'medium' | 'bold';
+
+export const DEFAULT_FONT_WEIGHT: FontWeightLevel = 'normal';
+
+/** localStorage key for font weight preference. */
+export const FONT_WEIGHT_STORAGE_KEY = 'eink-font-weight';
+
+/** data-* attribute applied to <html> by fontWeight.ts. */
+export const FONT_WEIGHT_ATTR = 'data-eink-font-weight';
+
+/** Human-readable labels for UI surfaces. */
+export const FONT_WEIGHT_LABELS: Record<FontWeightLevel, string> = {
+  normal: 'Normal',
+  medium: 'Medium',
+  bold: 'Bold',
+};
+
+/** Cycle order — click cycles normal→medium→bold→normal. */
+export const FONT_WEIGHT_CYCLE: readonly FontWeightLevel[] = [
+  'normal',
+  'medium',
+  'bold',
+] as const;

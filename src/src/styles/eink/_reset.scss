@@ -64,3 +64,17 @@ html.eink-mode [style*="--custom-background"]::before {
 html.eink-mode [data-eink-role="wallpaper"] {
   display: none !important;
 }
+
+// ════════════════════════════════════════════════════════
+// 5. Font weight — increases body text weight for E-Ink
+//    readability. Headings remain at their natural weight.
+//    Toggled via data-eink-font-weight on <html>.
+//    Normal level = no attribute → no-op.
+// ════════════════════════════════════════════════════════
+html[data-eink-font-weight="medium"] body {
+  font-weight: 500;
+}
+
+html[data-eink-font-weight="bold"] body {
+  font-weight: 600;
+}
