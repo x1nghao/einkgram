@@ -19,6 +19,8 @@ import { mountPageScrollButtons } from './init/scrollButtons';
 import { hideEinkLoader } from './init/hideLoader';
 import { applyInitialMode } from './init/mode';
 import { applyInitialFontWeight } from './fontWeight';
+import { applyInitialReaderMode } from './readerMode';
+import { startWallpaperDetection } from './init/wallpaperDetect';
 import type { EinkMode } from './init/mode';
 
 // Expose dev API. Single source of truth for window.__eink.
@@ -34,6 +36,7 @@ function exposeDevApi(shortcutApi: ShortcutApi) {
 // 1. Apply stored E-Ink mode to <html> ASAP (before first paint).
 applyInitialMode();
 applyInitialFontWeight();
+applyInitialReaderMode();
 
 // 2. Hide pre-React loading screen.
 scheduleHideLoader();
@@ -62,6 +65,22 @@ if (document.readyState === 'loading') {
 } else {
   window.addEventListener('load', () => void mountPageScrollButtons());
 }
+
+// 8. Wallpaper auto-detection (MutationObserver).
+//    Stamps data-eink-role="wallpaper" on detected wallpaper
+//    elements so _reset.scss can suppress them. Replaces the
+//    hardcoded attribute in Main.tsx (red zone).
+startWallpaperDetection();
+
+// 9. Remove anti-flicker guard. The guard in index.html forces
+//    white background before JS runs to prevent dark-flash on
+//    E-Ink. Once init.ts has applied the mode, the guard is no
+//    longer needed and its !important rules would interfere
+//    with normal theme switching.
+(function removeAntiFlickerGuard() {
+  const guard = document.getElementById('eink-anti-flicker-guard');
+  if (guard) guard.remove();
+})();
 
 // Type-only re-exports.
 export type { EinkMode };

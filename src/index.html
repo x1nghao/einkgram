@@ -89,6 +89,47 @@
       @layer tablist, spinner, button, input, layout;
     }
   </style>
+
+  <!--
+    Einkgram v0.19 — Anti-flicker guard.
+
+    Upstream's theme.ts writes CSS variables dynamically via JS
+    after first paint. If the user's system prefers dark mode,
+    there's a window where the page flashes dark before theme.ts
+    runs and applies theme-light.
+
+    This inline script runs synchronously before any JS module.
+    If E-Ink mode is enabled (the default), it injects a
+    <style> block that forces white background with maximum
+    specificity, overriding any dynamic theme variables. The
+    guard is removed once init.ts completes.
+  -->
+  <script>
+    (function () {
+      try {
+        var mode = localStorage.getItem('eink-mode');
+        if (mode === null) mode = 'on';
+        if (mode !== 'on') return;
+
+        var guard = document.createElement('style');
+        guard.id = 'eink-anti-flicker-guard';
+        guard.textContent = [
+          'html, html.theme-dark, html.theme-light {',
+          '  background-color: #ffffff !important;',
+          '  color: #000000 !important;',
+          '  color-scheme: light !important;',
+          '}',
+          'html.theme-dark {',
+          '  --theme-background-color: #ffffff !important;',
+          '  --background-color: #ffffff !important;',
+          '}'
+        ].join('\n');
+        (document.head || document.documentElement).appendChild(guard);
+      } catch (e) {
+        // localStorage blocked (privacy mode) — skip guard.
+      }
+    })();
+  </script>
 </head>
 
 <body id="root">

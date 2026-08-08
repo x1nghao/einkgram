@@ -66,3 +66,29 @@ export const FONT_WEIGHT_CYCLE: readonly FontWeightLevel[] = [
   'medium',
   'bold',
 ] as const;
+
+// ════════════════════════════════════════════════════════
+// Reader mode — reading-optimized layout for large E-Ink
+// screens. Full-width bubbles, larger spacing, bigger font.
+// Toggled via data-eink-reader on <html>.
+// ════════════════════════════════════════════════════════
+
+/** Reader mode: enabled or disabled. */
+export type ReaderMode = 'off' | 'on';
+
+export const DEFAULT_READER_MODE: ReaderMode = 'off';
+
+/** localStorage key for reader mode preference. */
+export const READER_MODE_STORAGE_KEY = 'eink-reader';
+
+/** data-* attribute applied to <html> by readerMode.ts. */
+export const READER_MODE_ATTR = 'data-eink-reader';
+
+/** Human-readable labels for UI surfaces. */
+export const READER_MODE_LABELS: Record<ReaderMode, string> = {
+  off: 'Off',
+  on: 'On',
+};
+
+/** Cycle order. */
+export const READER_MODE_CYCLE: readonly ReaderMode[] = ['off', 'on'] as const;

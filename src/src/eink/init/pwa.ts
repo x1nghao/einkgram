@@ -44,6 +44,20 @@ export function installPwaManifest(): void {
   manifest.dataset.einkgram = '1';
   document.head.appendChild(manifest);
 
+  // Register Service Worker for offline caching.
+  // Only in production (dev server doesn't serve /sw.js reliably).
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    navigator.serviceWorker.register('./sw.js', { scope: './' })
+      .then(() => {
+        // eslint-disable-next-line no-console
+        console.info('[Einkgram] Service Worker registered');
+      })
+      .catch((err) => {
+        // eslint-disable-next-line no-console
+        console.warn('[Einkgram] SW registration failed:', err.message);
+      });
+  }
+
   // Expose install state for the Settings UI later.
   window.addEventListener('appinstalled', () => {
     // eslint-disable-next-line no-console

@@ -29,6 +29,7 @@ import ListItem from '../../ui/ListItem';
 
 import EinkToggle from '../../../eink/EinkToggle';
 import FontWeightToggle from '../../../eink/FontWeightToggle';
+import ReaderToggle from '../../../eink/ReaderToggle';
 
 import styles from './SettingsMain.module.scss';
 
@@ -122,6 +123,7 @@ const SettingsMain: FC<OwnProps & StateProps> = ({
           </ListItem>
           <EinkToggle />
           <FontWeightToggle />
+          <ReaderToggle />
           <ListItem
             icon="unmute"
             narrow

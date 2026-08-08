@@ -29,9 +29,9 @@ describe('Deployment validation (v0.6)', () => {
     expect(hasDist()).toBe(true);
   });
 
-  it.skipIf(!hasDist())('index.html references einkgram.webmanifest', () => {
+  it.skipIf(!hasDist())('index.html contains anti-flicker guard script', () => {
     const html = readFileSync(join(DIST, 'index.html'), 'utf8');
-    expect(html).toContain('href="./einkgram.webmanifest"');
+    expect(html).toContain('eink-anti-flicker-guard');
   });
 
   it.skipIf(!hasDist())('einkgram.webmanifest is valid JSON with required PWA fields', () => {
@@ -64,10 +64,11 @@ describe('Deployment validation (v0.6)', () => {
     }
   });
 
-  it.skipIf(!hasDist())('service worker file is present', () => {
-    const files = readdirSync(DIST);
-    const sw = files.find((f) => /^service\.worker-.*\.js$/.test(f));
-    expect(sw, 'expected a hashed service.worker-*.js file in dist/').toBeTruthy();
+  it.skipIf(!hasDist())('service worker file (sw.js) is present', () => {
+    expect(
+      existsSync(join(DIST, 'sw.js')),
+      'expected sw.js in dist/ root',
+    ).toBe(true);
   });
 
   it.skipIf(!hasDist())('service worker registers itself in app code', () => {
