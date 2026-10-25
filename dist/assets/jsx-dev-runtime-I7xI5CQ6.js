@@ -1,1 +1,0 @@
-import{h as e}from"./teact-vJUiflmq.js";var t=e.Fragment;function n(t,n={},r){r!==void 0&&(n.key=r);let i=n.children;return n.children!==void 0&&(n.children=void 0),e.createElement(t,n,i)}function r(e,t,r){return n(e,t,r)}var i=r;export{i as n,t};
