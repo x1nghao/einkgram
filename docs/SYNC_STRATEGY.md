@@ -11,9 +11,12 @@ fork 的全部定制收敛为:
 
 | 类别 | 内容 | 同步代价 |
 |---|---|---|
-| 🟢 绿区(纯新增) | `src/eink/**`、`src/styles/eink/**`、`public/einkgram.webmanifest`、`docs/`、`dev/cleanup-dist.sh`、`dev/serve-dist.sh`、`dev/verify-browser.mjs`、`.github/workflows/deploy.yml` | 零冲突 |
+| 🟢 绿区(纯新增) | `src/eink/**`、`src/styles/eink/**`、`public/einkgram.webmanifest`、`docs/`、`dev/cleanup-dist.sh`、`dev/serve-dist.sh`、`dev/verify-browser.mjs` | 零冲突 |
 | 🟡 黄区(小补丁) | 见下方 8 个文件清单 | 低,冲突手工合并 |
 | 🔴 红区 | 协议层/组件层,零改动 | 无 |
+
+部署:本地 Wrangler → Cloudflare Pages(`einkgram` 项目,见 `docs/DEPLOY.md`);
+仓库内没有 CI 部署工作流,上游 `.github/workflows/package-and-publish.yml` 原样保留。
 
 ## 黄区补丁清单(merge 冲突时按此核对)
 

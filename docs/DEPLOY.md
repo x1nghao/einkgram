@@ -1,110 +1,46 @@
 # Einkgram — Deployment Guide
 
-This document describes how to deploy Einkgram to **GitHub Pages**
-for testing on real E-Ink devices.
+Einkgram deploys to **Cloudflare Pages** (project `einkgram`) with Wrangler.
+
+- Production: <https://einkgram.boki.one> (also `einkgram.pages.dev`)
+- Direct deployment URLs: `https://<hash>.einkgram.pages.dev`
 
 For E-Ink devices to install a PWA, you need:
-1. **HTTPS** (GitHub Pages provides this for free)
-2. **A valid `manifest.webmanifest`** (already wired up in v0.6.1)
-3. **A service worker** (Telegram-tt ships one, already enabled)
+1. **HTTPS** (Cloudflare Pages provides this for free)
+2. **A valid manifest** (`einkgram.webmanifest`, swapped in at build time)
+3. **A service worker** (the upstream one ships with the build)
 
 ---
 
-## Quick start (automated)
+## Quick start (local deploy via Wrangler)
 
-We have a GitHub Actions workflow at
-[`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml)
-that builds and deploys on every push to `main`.
-
-To use it:
-
-1. **Push the repo to GitHub.** Einkgram's repo is not on GitHub
-   yet (this workspace is local-only). You need to:
-   - Create a new GitHub repo (e.g. `einkgram/einkgram` or your
-     own fork)
-   - Push this directory to it:
-     ```bash
-     cd /Users/xinghao/Documents/einkgram
-     git remote add origin git@github.com:YOUR_USER/einkgram.git
-     git push -u origin main
-     ```
-
-2. **Enable GitHub Pages** in repo Settings:
-   - Settings → Pages → Source: **GitHub Actions**
-   - Save
-
-3. **Wait for the first build.** The Actions tab will show
-   the workflow run. Build takes 1-2 minutes. The deploy step
-   publishes to `https://YOUR_USER.github.io/einkgram/`.
-
-4. **(Optional) Set Telegram API credentials** as repo
-   secrets (Settings → Secrets and variables → Actions):
-   - `TELEGRAM_API_ID`
-   - `TELEGRAM_API_HASH`
-   - Without these the app still builds and loads, but the
-     user has to enter them in-app on first login.
-
-5. **Open the URL on your E-Ink device.** Tap the install
-   button in the browser's address bar to install the PWA.
-   It will appear on the home screen as "Einkgram".
-
----
-
-## Manual deploy (no GitHub Actions)
-
-If you don't want to use Actions, you can build locally and
-push the `dist/` folder to a separate branch:
+Wrangler authenticates on first use (`npx wrangler login`, browser OAuth).
 
 ```bash
-cd /Users/xinghao/Documents/einkgram
-npm install
-npm run build:production
-# dist/ is the deployable site
-cd dist
-git init
-git checkout -b gh-pages
-git add .
-git commit -m "deploy: build at $(date +%Y-%m-%dT%H:%M:%S)"
-git push -f git@github.com:YOUR_USER/einkgram.git gh-pages
+npm run build:production          # build + strip build-stats and dev icons
+bash dev/cleanup-dist.sh          # optional: report dist size
+npx wrangler pages deploy dist --project-name einkgram --branch main --commit-dirty=true
 ```
 
-Then in repo Settings → Pages → Source: **Deploy from a
-branch** → Branch: **gh-pages** → / (root).
+`--branch main` targets the project's production branch; any other branch
+creates a preview deployment. `APP_TITLE` (read from `.env`) sets the page
+title — keep `APP_TITLE=Einkgram` in `.env` (gitignored, local-only).
 
 ---
 
 ## What gets deployed
 
-The `dist/` folder after `npm run build:production` is
-~12 MB (most of it is emoji, sound files, and the WASM
+The `dist/` folder after `npm run build:production` is ~55 MB
+(most of it is the 64-px emoji set, sound files and the WASM
 fasttext classifier for spam detection). It includes:
 
 | File | Purpose |
 |------|---------|
 | `index.html` | App entry, references `einkgram.webmanifest` |
 | `einkgram.webmanifest` | PWA manifest (name, icons, theme) |
-| `service.worker-*.js` | Service worker for offline + cache |
+| `service.worker-*.js` | Upstream service worker (offline + cache + push) |
 | `index-*.js`, `index-*.css` | Hashed app bundles |
-| `assets/`, `public/` | Static assets (images, sounds) |
-
-GitHub Pages serves everything with the right MIME types
-because the build is plain static files.
-
----
-
-## Custom domain (optional)
-
-If you want `einkgram.example.com` instead of
-`YOUR_USER.github.io/einkgram`:
-
-1. Add a `CNAME` file to `public/` (so it gets copied
-   to `dist/`) with your domain on the first line.
-2. In your DNS provider, point the domain to GitHub
-   Pages (`185.199.108.153` etc. or a CNAME to
-   `YOUR_USER.github.io`).
-3. In repo Settings → Pages → Custom domain: enter your
-   domain. Enable "Enforce HTTPS" (requires the DNS to
-   resolve first; may take a few minutes).
+| `img-apple-64/` | Emoji set (the 160-px set is intentionally not built) |
 
 ---
 
@@ -129,14 +65,13 @@ After deploy, on your BOOX / Bigme / Supernote:
 
 ## Known PWA limitations on E-Ink
 
-- **Push notifications** (Telegram-tt supports them) need
-  VAPID keys. Not configured by default; we don't need
-  them for an E-Ink device (the user is actively looking
-  at it).
-- **Background sync** (Telegram-tt uses it for sending
-  messages while offline) is supported by the service
-  worker but unreliable on Android WebView. Out of scope
-  for v0.6.
+- **Push notifications** (the upstream service worker
+  supports them) need VAPID keys. Not configured by
+  default; not needed for an E-Ink device (the user is
+  actively looking at it).
+- **Background sync** (used for sending messages while
+  offline) is supported by the service worker but
+  unreliable on Android WebView. Out of scope.
 - **App shortcuts** (the "Saved Messages" shortcut in
   the manifest) require Android 7.1+; older BOOX OS
   versions ignore them silently.
@@ -145,13 +80,18 @@ After deploy, on your BOOX / Bigme / Supernote:
 
 ## Troubleshooting
 
+**`wrangler` asks for login or an account**
+→ Run `npx wrangler login` once; credentials are stored in
+  `~/Library/Preferences/.wrangler/config/default.toml`.
+
 **Build fails on "Cannot find module 'gramjs'"**
 → Run `npm ci` in the project root (where `package.json` lives).
 
 **Page loads but Telegram login fails**
 → Check that `TELEGRAM_API_ID` / `TELEGRAM_API_HASH` are
-  set in the build environment. The first screen asks for
-  a phone number, then a verification code.
+  set in `.env` — they are compiled into the bundle at
+  build time. The first screen asks for a phone number,
+  then a verification code.
 
 **"Add to Home Screen" doesn't show up**
 → Some E-Ink browsers (especially older BOOX firmware)
@@ -161,21 +101,7 @@ After deploy, on your BOOX / Bigme / Supernote:
   mode).
 
 **Service worker doesn't cache the app**
-→ Service workers require HTTPS (we have it on Pages)
+→ Service workers require HTTPS (Cloudflare Pages has it)
   and a same-origin scope. If you're testing on
-  `http://192.168.x.x:1235` (Vite dev), the SW won't
+  `http://192.168.x.x:1234` (Vite dev), the SW won't
   register. Test on the deployed URL.
-
----
-
-## Next steps after deploy
-
-1. Test on your E-Ink device; report any visual glitches.
-2. Set up auto-updates: the service worker checks for
-   new versions on every page load.
-3. If the app works well, publish the repo to make it
-   easy for other E-Ink users to fork and run.
-
-For Einkgram's actual GitHub repo, see
-<https://github.com/Einkgram/Einkgram> (placeholder; the
-real URL is wherever the upstream user pushes it).

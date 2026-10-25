@@ -16,7 +16,6 @@ dev/perf/screenshot*
 .zcode/
 docs/research/
 
-# Track fork workflows alongside the upstream one
+# Track the upstream workflow; fork deploys via local Wrangler, no CI workflow
 .github/workflows/*
 !.github/workflows/package-and-publish.yml
-!.github/workflows/deploy.yml
