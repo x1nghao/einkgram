@@ -9,5 +9,14 @@ tests/
 *.iml
 dev/perf/screenshot*
 .DS_store
+.DS_Store
+
+# Local tooling and private notes (never pushed)
+.claude/
+.zcode/
+docs/research/
+
+# Track fork workflows alongside the upstream one
 .github/workflows/*
 !.github/workflows/package-and-publish.yml
+!.github/workflows/deploy.yml
