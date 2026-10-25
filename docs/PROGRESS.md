@@ -1080,3 +1080,18 @@ user is: white page → "Loading Einkgram…" + 25% bar
 
 Net: -178/+37 lines. tsc 0 errors. 94/94 tests. Deployed to https://einkgram.pages.dev/ (preview https://7076f0a1.einkgram.pages.dev/)
 
+
+## v0.20 — Rebuild on upstream 12.0.47 (2026-10-25)
+
+**Repo flattened and rebuilt on a fresh upstream base**:
+
+1. Dropped the nested `src/src/` layout and the frozen outer tree; standard telegram-tt layout, `git merge upstream/master` restored (upstream was 212 commits / 12 releases ahead, 12.0.35 → 12.0.47)
+2. Eink layer ported to `src/eink/` + `src/styles/eink/` (28 files, zero new deps, protocol layer untouched); upstream patches reduced to 8 files
+3. Wallpaper suppression reimplemented as a `:global(html.eink-mode)` gate inside `_patternBackground.module.scss` (upstream replaced the old wallpaper div with the `Wallpaper` component) — `Main.tsx` no longer patched
+4. New paper-white base rule forces body inline theme vars (`App.tsx` writes dark `--theme-background-color` from global theme state, bypassing switchTheme) — fixes black background on dark-mode systems
+5. Dropped the custom `sw.js` — upstream service worker assetCache covers offline caching; `einkgram.webmanifest` kept
+6. Switched deployment to Cloudflare Pages via Wrangler (project `einkgram`, production https://einkgram.boki.one); GitHub Pages deleted
+7. `verify-browser.mjs` switched from the `ws` package to the Node built-in WebSocket; deploy tooling paths updated for the flat layout
+8. Published to github.com/x1nghao/einkgram (public); old nested history archived on `archive/v0.19-nested`
+
+Net: fork surface = 1 self-contained directory + 8 upstream file patches + configs. tsc 0 errors, eslint/stylelint clean, 193/193 tests, production build 55 MB. Known issues: upstream `dev:mocked` hangs (not eink-related); toggling eink off on dark-system devices shows dark background until next reload (pre-existing behavior).

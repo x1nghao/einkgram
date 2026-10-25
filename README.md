@@ -1,58 +1,46 @@
-# Telegram Web A
+# Einkgram
 
-This project won the first prize 🥇 at [Telegram Lightweight Client Contest](https://contest.com/javascript-web-3) and now is an official Telegram client available to anyone at [web.telegram.org/a](https://web.telegram.org/a).
+E-Ink optimized Telegram web client — a fork of
+[telegram-tt](https://github.com/Ajaxy/telegram-tt) (Telegram Web A) rebuilt
+for electronic-ink displays: paper-white rendering, high-contrast focus
+rings, page-scroll controls and an optional reader mode, with upstream
+animations and wallpapers suppressed by an e-ink stylesheet layer.
 
-According to the original contest rules, it has nearly zero dependencies and is fully based on its own [Teact](https://github.com/Ajaxy/teact) framework (which re-implements React paradigm). It also uses a custom version of [GramJS](https://github.com/gram-js/gramjs) as an MTProto implementation.
+**Live**: <https://einkgram.boki.one>
 
-The project incorporates lots of technologically advanced features, modern Web APIs and techniques: WebSockets, Web Workers and WebAssembly, multi-level caching and PWA, voice recording and media streaming, cryptography and raw binary data operations, optimistic and progressive interfaces, complicated CSS/Canvas/SVG animations, reactive data streams, and so much more.
+## What's different from upstream
 
-Feel free to explore, provide feedback and contribute.
+- `src/eink/` — a self-contained e-ink layer loaded as a second entry script:
+  e-ink mode (on/off), font-weight cycle (normal / medium / bold), reader
+  mode, fixed page-scroll buttons, chat-wallpaper suppression, anti-flicker
+  boot and the PWA manifest hook
+- `src/styles/eink/` — e-ink design tokens + rendering reset scoped under
+  `html.eink-mode`
+- 8 minimal patches to upstream files (full list in
+  [docs/SYNC_STRATEGY.md](docs/SYNC_STRATEGY.md)); the protocol layer
+  (`lib/gramjs`, `api`) is untouched
+- Emoji limited to the 64-px set (−63 MB in `dist`) and production
+  sourcemaps disabled (−18 MB)
+- Deployed to Cloudflare Pages via Wrangler
+  ([docs/DEPLOY.md](docs/DEPLOY.md)); no CI deployment workflow
 
-## Local setup
+## Development
 
-```sh
-mv .env.example .env
-
-npm i
+```bash
+npm ci              # node >= 24.15
+npm run dev         # real API dev server (localhost:1234)
+npm run dev:mocked  # mocked client — currently broken upstream, may hang
+npm run check:ts    # tsc + eslint
+npm run check:css   # stylelint
+npm test            # vitest (193 tests)
+npm run build:production && bash dev/cleanup-dist.sh
 ```
 
-Obtain API ID and API hash on [my.telegram.org](https://my.telegram.org) and populate the `.env` file.
+## Syncing with upstream
 
-## Dev mode
+Quarterly `git merge upstream/master` with an 8-file patch checklist —
+see [docs/SYNC_STRATEGY.md](docs/SYNC_STRATEGY.md).
 
-```sh
-npm run dev
-```
+## License
 
-### Invoking API from console
-
-Start your dev server and locate GramJS worker in the console context.
-
-All constructors and functions available in global `GramJs` variable.
-
-Run `npm run gramjs:tl full` to get access to all available Telegram methods.
-
-Example usage:
-``` javascript
-await invoke(new GramJs.help.GetAppConfig())
-```
-
-### Dependencies
-* [GramJS](https://github.com/gram-js/gramjs) ([MIT License](https://github.com/gram-js/gramjs/blob/master/LICENSE))
-* [fflate](https://github.com/101arrowz/fflate) ([MIT License](https://github.com/101arrowz/fflate/blob/master/LICENSE))
-* [cryptography](https://github.com/spalt08/cryptography) ([Apache License 2.0](https://github.com/spalt08/cryptography/blob/master/LICENSE))
-* [emoji-data](https://github.com/iamcal/emoji-data) ([MIT License](https://github.com/iamcal/emoji-data/blob/master/LICENSE))
-* [twemoji-parser](https://github.com/jdecked/twemoji-parser) ([MIT License](https://github.com/jdecked/twemoji-parser/blob/master/LICENSE.md))
-* [tlottie](https://github.com/dkaraush/tlottie) ([MIT License](https://github.com/dkaraush/tlottie/))
-* [opus-recorder](https://github.com/chris-rudmin/opus-recorder) ([Various Licenses](https://github.com/chris-rudmin/opus-recorder/blob/master/LICENSE.md))
-* [qr-code-styling](https://github.com/kozakdenys/qr-code-styling) ([MIT License](https://github.com/kozakdenys/qr-code-styling/blob/master/LICENSE))
-* [music-metadata](https://github.com/Borewit/music-metadata) ([MIT License](https://github.com/Borewit/music-metadata/blob/master/LICENSE.txt))
-* [Tiptap](https://github.com/ueberdosis/tiptap) ([MIT License](https://github.com/ueberdosis/tiptap/blob/main/LICENSE.md))
-* [marked](https://github.com/markedjs/marked) ([MIT License](https://github.com/markedjs/marked/blob/master/LICENSE.md))
-* [lowlight](https://github.com/wooorm/lowlight) ([MIT License](https://github.com/wooorm/lowlight/blob/main/license))
-* [idb-keyval](https://github.com/jakearchibald/idb-keyval) ([Apache License 2.0](https://github.com/jakearchibald/idb-keyval/blob/main/LICENCE))
-* [fasttextweb](https://github.com/karmdesai/fastTextWeb)
-* fastblur
-
-## Bug reports and Suggestions
-If you find an issue with this app, let Telegram know using the [Suggestions Platform](https://bugs.telegram.org/c/4002).
+GPL-3.0 — inherited from telegram-tt.
