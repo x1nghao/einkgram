@@ -4440,4 +4440,3 @@ var e=`"Month1" = "January";
 "PageTitleNotifications_one" = "{count} notification";
 "PageTitleNotifications_other" = "{count} notifications";
 `;export{e as default};
-//# sourceMappingURL=fallback-Chkt5iIh.js.map

@@ -18,6 +18,9 @@ import useHistoryBack from '../../../hooks/useHistoryBack';
 import useLang from '../../../hooks/useLang';
 import useLastCallback from '../../../hooks/useLastCallback';
 
+import { EinkToggle } from '../../../eink/EinkToggle';
+import { FontWeightToggle } from '../../../eink/FontWeightToggle';
+import { ReaderToggle } from '../../../eink/ReaderToggle';
 import ChatExtra from '../../common/profile/ChatExtra';
 import ProfileInfo from '../../common/profile/ProfileInfo';
 import Island from '../../gili/layout/Island';
@@ -175,6 +178,33 @@ const SettingsMain = ({
           >
             <span className="title">{lang('MenuAnimations')}</span>
             <span className="subtitle">{lang('SettingsPerformanceDesc')}</span>
+          </ListItem>
+
+          <ListItem
+            icon="appearance-filled"
+            iconBg="gray"
+            narrow
+            rightElement={<EinkToggle />}
+          >
+            <span className="title">E-Ink Mode</span>
+          </ListItem>
+
+          <ListItem
+            icon="spoiler-text"
+            iconBg="blue"
+            narrow
+            rightElement={<FontWeightToggle />}
+          >
+            <span className="title">Font Weight</span>
+          </ListItem>
+
+          <ListItem
+            icon="article"
+            iconBg="purple"
+            narrow
+            rightElement={<ReaderToggle />}
+          >
+            <span className="title">Reader Mode</span>
           </ListItem>
 
           <ListItem

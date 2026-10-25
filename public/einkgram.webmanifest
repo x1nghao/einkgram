@@ -1,0 +1,43 @@
+{
+  "name": "Einkgram",
+  "short_name": "Einkgram",
+  "description": "A Telegram client for E-Ink devices. Optimized for BOOX, Bigme, Supernote, and other e-paper panels.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#FFFFFF",
+  "theme_color": "#000000",
+  "categories": ["social", "communication", "productivity"],
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Saved Messages",
+      "short_name": "Saved",
+      "description": "Your personal cloud storage",
+      "url": "./?p=c"
+    }
+  ],
+  "prefer_related_applications": false
+}

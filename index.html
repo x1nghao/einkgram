@@ -1,5 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" translate="no" class="notranslate initial">
+<!--
+  Einkgram: `theme-light eink-mode` is hard-coded because upstream's theme logic
+  runs in JS after the first paint. Without it, users on dark-mode systems see a
+  black flash before the eink init script applies the light theme.
+-->
+<html lang="en" translate="no" class="notranslate initial theme-light eink-mode">
 
 <head>
   <meta charset="UTF-8">
@@ -53,12 +58,56 @@
   <!-- Navigation opt-in must apply before parser-blocking scripts allow the first render -->
   <link rel="stylesheet" href="./view-transitions.css">
   <script vite-ignore src="./redirect.js"></script>
+
+  <!--
+    Einkgram: paper-white background and light color-scheme in a blocking <style>,
+    so the first paint is white even if the system prefers dark.
+  -->
   <style>
+    html, body {
+      background-color: #ffffff;
+      color: #000000;
+      color-scheme: light;
+    }
     @layer reset, variables, ui, components;
     @layer ui {
       @layer tablist, spinner, button, input, layout;
     }
   </style>
+
+  <!--
+    Einkgram: anti-flicker guard. Upstream writes theme CSS variables via JS after
+    first paint; on dark-mode systems there is a window where the page flashes dark
+    before the light theme applies. This synchronous script injects a <style> block
+    forcing a white background with maximum specificity; init.ts removes the guard
+    once the eink mode is applied.
+  -->
+  <script>
+    (function () {
+      try {
+        var mode = localStorage.getItem('eink-mode');
+        if (mode === null) mode = 'on';
+        if (mode !== 'on') return;
+
+        var guard = document.createElement('style');
+        guard.id = 'eink-anti-flicker-guard';
+        guard.textContent = [
+          'html, html.theme-dark, html.theme-light {',
+          '  background-color: #ffffff !important;',
+          '  color: #000000 !important;',
+          '  color-scheme: light !important;',
+          '}',
+          'html.theme-dark {',
+          '  --theme-background-color: #ffffff !important;',
+          '  --background-color: #ffffff !important;',
+          '}'
+        ].join('\n');
+        (document.head || document.documentElement).appendChild(guard);
+      } catch (e) {
+        // localStorage blocked (privacy mode) — skip guard.
+      }
+    })();
+  </script>
 </head>
 
 <body id="root">
@@ -67,9 +116,33 @@
     <h1>Telegram Web</h1>
     <p>Please, enable JavaScript to open the app.</p>
   </noscript>
+
+  <!-- Einkgram: pre-app loading screen, removed by eink/init.ts once the app is ready -->
+  <div id="eink-loading-screen" role="status" aria-live="polite" style="
+    position: fixed; inset: 0; z-index: 9999;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    width: 100%; height: 100%; padding: 2rem;
+    background-color: #ffffff; color: #000000;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 1rem; font-weight: 500;
+    line-height: 1.5; text-align: center;
+    box-sizing: border-box; margin: 0;
+  ">
+    <div style="margin-bottom: 1.5rem; letter-spacing: 0.025em;">Loading Einkgram…</div>
+    <div role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="25" style="
+      position: relative; width: 16rem; max-width: 80%; height: 0.5rem;
+      background-color: #ffffff; border: 2px solid #000000;
+      box-sizing: content-box; overflow: hidden;
+    ">
+      <div style="position: absolute; top: 0; left: 0; bottom: 0; width: 25%; background-color: #000000;"></div>
+    </div>
+  </div>
+
   <div id="portals"></div>
   <script vite-ignore src="./compatTest.js"></script>
   <script type="module" src="./src/index.tsx"></script>
+  <script type="module" src="./src/eink/init.ts"></script>
 </body>
 
 </html>

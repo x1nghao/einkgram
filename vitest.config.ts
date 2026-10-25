@@ -11,6 +11,12 @@ export default defineConfig((configEnv) => mergeConfig(
     },
     test: {
       environment: 'jsdom',
+      // jsdom 21+ defaults localStorage quota to 0, breaking eink tests
+      environmentOptions: {
+        jsdom: {
+          storageQuota: 10_000_000,
+        },
+      },
       exclude: [
         ...configDefaults.exclude,
         'tests/playwright/**',

@@ -46,11 +46,7 @@ const UNWATCHED_STATIC_COPY_TARGETS: Target[] = [
     dest: '.',
     rename: { stripBase: 2 },
   },
-  {
-    src: normalizePath(resolve(DIR_NAME, 'node_modules/emoji-data-ios/img-apple-160/**/*')),
-    dest: '.',
-    rename: { stripBase: 2 },
-  },
+  // Einkgram: img-apple-160 removed (63MB saved), 64px is sufficient
 ];
 
 type BundleReportPlugin = {
@@ -84,7 +80,7 @@ export default defineConfig(({ mode }): UserConfig => {
   const isProductionApp = appEnv === 'production';
   const appleIcon = isProductionApp ? 'apple-touch-icon' : 'apple-touch-icon-dev';
   const mainIcon = isProductionApp ? 'icon-192x192' : 'icon-dev-192x192';
-  const manifest = isProductionApp ? 'site.webmanifest' : 'site_dev.webmanifest';
+  const manifest = isProductionApp ? 'einkgram.webmanifest' : 'site_dev.webmanifest'; // Einkgram: custom manifest
   const csp = buildCsp(appEnv);
   const isDevelopmentMode = mode === 'development';
   const telegramApiId = env.TELEGRAM_API_ID || '';
@@ -228,7 +224,7 @@ export default defineConfig(({ mode }): UserConfig => {
       },
     },
     build: {
-      sourcemap: true,
+      sourcemap: !isProductionApp, // Einkgram: off in production (saves 18MB)
       assetsInlineLimit: (filePath) => (IMAGE_ASSET_RE.test(filePath) ? false : undefined),
     },
     worker: {

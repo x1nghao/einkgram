@@ -24,6 +24,11 @@
     background-size: cover;
   }
 
+  // Einkgram: hide the whole wallpaper layer (gradient, patterns, custom images) in eink mode
+  :global(html.eink-mode) & {
+    display: none;
+  }
+
   &:not(.customBgImage).customBgColor::before {
     display: none;
   }

@@ -1,0 +1,115 @@
+// Einkgram — Page scroll button styles (v0.4.2)
+// E-Ink touch-panel friendly:
+//   - 64×64 minimum tap targets
+//   - High-contrast black-on-white (auto-flips on eink-1bit)
+//   - No transitions, no shadows, no gradients, no blur
+//   - Solid 2px borders for ghost-tap detection
+//   - Hidden when E-Ink mode is off (the parent <html> doesn't have
+//     the .eink-mode class)
+// Green zone — no upstream code touched.
+
+.eink-page-scroll {
+
+  // Don't capture pointer events on the wrapper itself
+  pointer-events: none;
+
+  position: fixed;
+  z-index: 9998;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.eink-page-scroll__btn {
+  pointer-events: auto;
+  cursor: pointer;
+
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+  justify-content: center;
+
+  width: 64px;
+  min-width: 64px;
+  height: 64px;
+  min-height: 64px;
+  padding: 0;
+  border: 2px solid var(--eink-fg, #000000);
+  border-radius: 0;
+
+  font-family: inherit;
+  font-weight: 700;
+  color: var(--eink-fg, #000000);
+
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--eink-bg, #FFFFFF);
+  filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
+
+  // Disable any inline transitions / hover effects
+  transition: none;
+  animation: none;
+}
+
+.eink-page-scroll__btn:hover,
+.eink-page-scroll__btn:focus,
+.eink-page-scroll__btn:active {
+  color: var(--eink-bg, #FFFFFF);
+
+  background: var(--eink-fg, #000000);
+  outline: 2px solid var(--eink-fg, #000000);
+  outline-offset: 2px;
+  // Suppress the browser's default tap highlight
+  -webkit-tap-highlight-color: transparent;
+}
+
+.eink-page-scroll__arrow {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.eink-page-scroll__label {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+// Only visible in eink-mode (parent <html> must have .eink-mode class).
+// We use a sibling-selector approach: the wrapper div is created in
+// <body> by init.ts, so html.eink-mode body > .eink-page-scroll wins.
+html:not(.eink-mode) .eink-page-scroll {
+  display: none !important;
+}
+
+// On 1-bit panels, the border is solid 1px to avoid moiré.
+html.eink-mode.eink-1bit .eink-page-scroll__btn {
+  border-width: 1px;
+  font-weight: 900;
+}
+
+// On paper (sepia) panels, the button stays monochromatic to keep
+// the warm-tone aesthetic.
+html.eink-mode.eink-paper .eink-page-scroll__btn {
+  // no color change; let the sepia filter apply uniformly
+}
+
+// Respect the user's reduced-motion preference (extra safety; we
+// already disable transitions globally, but this kills any future
+// pseudo-animation we might add).
+@media (prefers-reduced-motion: reduce) {
+  .eink-page-scroll,
+  .eink-page-scroll * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

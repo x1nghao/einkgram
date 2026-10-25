@@ -39,6 +39,10 @@ const injectCss = (css: string) => {
 };
 
 const switchTheme = (theme: ThemeKey, withAnimation: boolean) => {
+  // Einkgram: refuse to switch to dark theme in eink mode
+  if (theme === 'dark' && document.documentElement.classList.contains('eink-mode')) {
+    return;
+  }
   const themeClassName = `theme-${theme}`;
   if (document.documentElement.classList.contains(themeClassName)) {
     return;
